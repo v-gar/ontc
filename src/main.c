@@ -9,8 +9,10 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "main.h"
+#include "shell.h"
 
 void print_help(void)
 {
@@ -19,6 +21,10 @@ void print_help(void)
 
 int main(int argc, char *argv[])
 {
-	print_help();
+	if (argc == 2) {
+		if (strcmp("shell", argv[1]) == 0)
+			start_repl_shell();
+	} else if (argc < 2)
+		print_help();
 	return 0;
 }
