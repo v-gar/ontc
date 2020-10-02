@@ -3,3 +3,24 @@ Ontology Toolchain
 
 The ontology toolchain (ontc) is a set of software development tools.
 It uses ontologies to support the development of software.
+
+Build
+-----
+
+The following software is used to build ontc:
+
+ * GCC 10.2.0 (https://gcc.gnu.org/)
+ * GNU Make 4.3 (https://www.gnu.org/software/make/)
+ * GNU Bison 3.7.2 (https://www.gnu.org/software/bison/)
+ * flex 2.6.4 (https://github.com/westes/flex)
+
+All software versions mentioned above are no minimum versions but
+recommendations because ontc can be successfully compiled using
+these versions.
+
+In order to build ontc just run:
+
+	mkdir build
+	make
+
+The binary will be located in the build/ directory.
