@@ -8,7 +8,7 @@ CCFLAGS = -g
 build/ontc : $(SRCS)
 	$(CC) $(CCFLAGS) -I$(SRCDIR) -o build/ontc $(SRCS)
 
-build/parser : build/lex.yy.c build/parse.tab.c
+build/parser : build/lex.yy.c build/parse.tab.c src/ast.c
 	$(CC) $(CCFLAGS) -I$(SRCDIR) -o build/parser $^
 
 build/lex.yy.c : src/lex.l build/parse.tab.h

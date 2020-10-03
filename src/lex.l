@@ -82,11 +82,17 @@
 
 "*" |
 "/" |
-"%"				{ return MUL_OP; }
+"%"				{
+	yylval.oper = yytext[0];
+	return MUL_OP;
+}
 
  /* binary and unary ops */
 "+" |
-"-"				{ return ADD_OP; }
+"-"				{
+	yylval.oper = yytext[0];
+	return ADD_OP;
+}
 
  /* unary ops */
 "!"				{ return NEG_OP; }
@@ -94,16 +100,32 @@
 "--"				{ return DEC_OP; }
 
  /* identifiers */
-[_a-zA-Z][_a-zA-Z0-9]*		{ DBGMSG("IDENT"); return IDENTIFIER; }
+[_a-zA-Z][_a-zA-Z0-9]*		{
+	yylval.strval = malloc(strlen(yytext) + 1); /* TODO: handle OOM */
+	strcpy(yylval.strval, yytext);
+	return IDENTIFIER;
+}
 
  /* integers */
-[0-9]+				{ DBGMSG("INTCO"); return INT_CONST; }
+[0-9]+				{
+	yylval.intval = atoi(yytext);
+	return INT_CONST;
+}
 
  /* floats */
-[0-9]+"."[0-9]+			{ DBGMSG("FLOCO"); return FLOAT_CONST; }
+[0-9]+"."[0-9]+			{
+	yylval.fpnval = atof(yytext);
+	return FLOAT_CONST;
+}
 
  /* strings */
-\"([^"\\\n])*\"			{ return STRING_CONST; }
+\"([^"\\\n])*\"			{
+	yylval.strval = malloc(strlen(yytext) + 1); /* TODO: handle OOM */
+	/* remove quotation marks */
+	strcpy(yylval.strval, yytext + 1);
+	yylval.strval[strlen(yylval.strval) - 1] = '\0';
+	return STRING_CONST;
+}
 
  /* comments */
 "/*"				{ BEGIN(COMMENT); }
