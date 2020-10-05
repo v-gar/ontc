@@ -8,6 +8,11 @@
  * This is the main file of the ontc command.
  */
 
+/**
+ * \file main.c
+ * \brief main file for the ontc command.
+ */
+
 #include <stdio.h>
 #include <string.h>
 

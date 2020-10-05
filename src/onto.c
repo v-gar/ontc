@@ -7,6 +7,11 @@
  * Copyright (c) 2020 Viktor Garske
  */
 
+/**
+ * \file onto.c
+ * \brief Function for the manipulation of ontology databases
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

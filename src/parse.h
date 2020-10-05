@@ -11,6 +11,11 @@
 #ifndef H_PARSE
 #define H_PARSE
 
+/**
+ * \file parse.h
+ * \brief Bison-agnostic interface for the parser
+ */
+
 enum keywords {
 	K_CLS,
 	K_INST,

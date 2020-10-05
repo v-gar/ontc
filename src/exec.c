@@ -6,6 +6,11 @@
  * Copyright (c) 2020 Viktor Garske
  */
 
+/**
+ * \file exec.c
+ * \brief Executor implementation
+ */
+
 #include <string.h>
 
 #include "exec.h"

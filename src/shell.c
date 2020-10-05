@@ -6,6 +6,11 @@
  * Copyright (c) 2020 Viktor Garske
  */
 
+/**
+ * \file shell.c
+ * \brief Implementation of the REPL shell
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

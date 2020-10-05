@@ -10,6 +10,11 @@
 #define H_ONTOLOGY
 #include "util.h"
 
+/**
+ * \file onto.h
+ * \brief Interface (with fundamental structs) for the ontology system
+ */
+
 struct ontology_database;
 struct ontology_resource;
 struct ontology_fact;

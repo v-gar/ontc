@@ -9,8 +9,16 @@
 #ifndef H_AST
 #define H_AST
 
+/**
+ * \file ast.h
+ * \brief Interface for the abstract syntax tree
+ */
+
 #include <stddef.h>
 
+/**
+ * \brief Types of abstract syntax tree nodes
+ */
 enum ast_node_type {
 	ANT_UNDEFINED,
 
@@ -50,13 +58,34 @@ enum ast_binary_op {
 	BOP_MOD
 };
 
-/* AST is implemented as a left-child, right-sibling tree */
+/**
+ * \brief Basic node of the abstract syntax tree (AST).
+ *
+ * The AST is implemented as a left-child, right-sibling tree, thus it
+ * contains a pointer to a child node and a sibling node.
+ */
 struct ast_node {
+	/**
+	 * Type of the AST node
+	 */
 	enum ast_node_type type;
+
+	/**
+	 * Pointer to the next child node.
+	 * One level down descending the tree.
+	 */
 	struct ast_node *child;
+
+	/**
+	 * Pointer to the next sibling node.
+	 * Same level.
+	 */
 	struct ast_node *sibling;
 };
 
+/**
+ * \brief Special node of the AST carrying an integer value.
+ */
 struct ast_node_int {
 	enum ast_node_type type;
 	struct ast_node *child;
@@ -65,6 +94,9 @@ struct ast_node_int {
 	int value;
 };
 
+/**
+ * \brief Special node of the AST carrying a float value.
+ */
 struct ast_node_float {
 	enum ast_node_type type;
 	struct ast_node *child;
@@ -73,6 +105,9 @@ struct ast_node_float {
 	float value;
 };
 
+/**
+ * \brief Special node of the AST carrying a string.
+ */
 struct ast_node_str {
 	enum ast_node_type type;
 	struct ast_node *child;

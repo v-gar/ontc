@@ -6,6 +6,11 @@
  * Copyright (c) 2020 Viktor Garske
  */
 
+/**
+ * \file builtin.c
+ * \brief Implementation of built-in language features
+ */
+
 #include "builtin.h"
 #include "stdio.h"
 

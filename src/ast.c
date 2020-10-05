@@ -6,6 +6,11 @@
  * Copyright (c) 2020 Viktor Garske
  */
 
+/**
+ * \file ast.c
+ * \brief Functions for the manipulation of the abstract syntax tree
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

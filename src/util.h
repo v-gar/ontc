@@ -10,6 +10,11 @@
 #define H_UTIL
 
 /**
+ * \file util.h
+ * \brief Utilities used by multiple components
+ */
+
+/**
  * Singly linked list node
  */
 struct sl_list_node {
