@@ -15,7 +15,7 @@
   void yyerror(char const *);
   extern int yylineno;
 
-  struct ast_node *ast;
+  struct ast_node *parse_ast;
 
 #define DEBUG 1
 #if DEBUG == 1
@@ -96,8 +96,8 @@
 
 %%
 start:
-  %empty { ast = NULL; }
-| tunit { ast = $1; }
+  %empty { parse_ast = NULL; }
+| tunit { parse_ast = ast_new_transunit($1); }
 ;
 
 tunit:
@@ -424,13 +424,6 @@ rel_op:
 ;
 
 %%
-int main(void)
-{
-	yyparse();
-	ast_print(ast);
-	return 0;
-}
-
 void yyerror(char const *s)
 {
 	fprintf(stderr, "[P] Error: %s at line %d\n", s, yylineno);

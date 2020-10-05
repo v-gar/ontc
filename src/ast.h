@@ -13,6 +13,9 @@
 
 enum ast_node_type {
 	ANT_UNDEFINED,
+
+	ANT_TRANSUNIT,
+
 	ANT_INT,
 	ANT_FLOAT,
 	ANT_STR,
@@ -29,7 +32,9 @@ enum ast_node_type {
 	ANT_ASSIGN,
 
 	ANT_FUNC,
-	ANT_SIG
+	ANT_SIG,
+
+	ANT_TFACT /* triple fact */
 };
 
 enum ast_unary_op {
@@ -88,10 +93,14 @@ struct ast_node *ast_new_sig(struct ast_node *name);
 struct ast_node *ast_new_func(struct ast_node *sig,
 		struct ast_node *block);
 
+struct ast_node *ast_new_transunit(struct ast_node *first);
+
 struct ast_node *ast_add_seq(struct ast_node *node,
 		struct ast_node *successor);
 struct ast_node *ast_scope_add(struct ast_node *node,
 		struct ast_node *successor);
+
+int ast_validate(struct ast_node *root);
 
 /* debugging tools */
 void ast_print(struct ast_node *root);

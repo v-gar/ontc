@@ -135,6 +135,15 @@ struct ast_node *ast_new_func(struct ast_node *sig,
 	return (struct ast_node *)node;
 }
 
+struct ast_node *ast_new_transunit(struct ast_node *first)
+{
+	INIT_NODE(ast_node, ANT_TRANSUNIT);
+
+	node->child = first;
+
+	return (struct ast_node *)node;
+}
+
 struct ast_node *ast_add_seq(struct ast_node *node,
 		struct ast_node *successor)
 {
@@ -143,11 +152,12 @@ struct ast_node *ast_add_seq(struct ast_node *node,
 		return node;
 	}
 
-	if (node->sibling != NULL) {
-		fprintf(stderr, "WARNING: overriding sibling!\n");
-	}
+	struct ast_node **cursor = &node->sibling;
 
-	node->sibling = successor;
+	while (*cursor != NULL)
+		cursor = &(*cursor)->sibling;
+
+	*cursor = successor;
 	return node;
 }
 
@@ -189,4 +199,42 @@ void ast_print(struct ast_node *root)
 	ast_print(root->child);
 	printf("Sibling:\n");
 	ast_print(root->sibling);
+}
+
+int ast_validate(struct ast_node *root)
+{
+	if (root == NULL) {
+		fprintf(stderr, "Error: AST empty\n");
+		return 1;
+	}
+
+	struct ast_node *cur = root->child;
+
+	int main_found = 0;
+
+	while (cur != NULL) {
+		if (cur->type == ANT_FUNC) {
+			/* if this is a function ... */
+			struct ast_node *ident = cur->child->child;
+			if (ident->type == ANT_STR) {
+				/* ... and the identifier is a string ... */
+				if (strcmp(
+					((struct ast_node_str *)ident)->value,
+					"main") == 0)
+					main_found = 1;
+			} else {
+				fprintf(stderr, "[A] Error: invalid fn sig\n");
+				return 1;
+			}
+		}
+
+		cur = cur->sibling;
+	}
+
+	if (main_found != 1) {
+		fprintf(stderr, "[A] Error: missing main function\n");
+		return 1;
+	}
+
+	return 0;
 }

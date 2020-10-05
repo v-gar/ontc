@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "main.h"
+#include "exec.h"
 #include "shell.h"
 
 void print_help(void)
@@ -19,9 +20,19 @@ void print_help(void)
 	printf("ontc - ontology toolchain\n");
 }
 
+void start_interpreter(char *filename)
+{
+	FILE *file = fopen(filename, "r");
+	exec_program(file);
+	fclose(file);
+}
+
 int main(int argc, char *argv[])
 {
-	if (argc == 2) {
+	if (argc == 3) {
+		if (strcmp("run", argv[1]) == 0)
+			start_interpreter(argv[2]);
+	} else if (argc == 2) {
 		if (strcmp("shell", argv[1]) == 0)
 			start_repl_shell();
 	} else if (argc < 2)
