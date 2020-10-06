@@ -1,0 +1,19 @@
+/*! \mainpage ontc Documentation
+\section intro_sec Introduction
+
+The ontology toolchain \b ontc is a collection of libraries and
+applications enabling the development of ontology-assisted software.
+It is written in C.
+
+\section structure_sec Project structure
+
+The project is structured as follows:
+
+- <tt>src/</tt> contains source code files for the binaries (like \a ontc)
+- <tt>lib/</tt> contains the libraries \e libontg or \e liboxpl
+  which include the main components for operating with ontologies and
+  interpreting OXPL source code
+- <tt>include/</tt> contains public headers
+- <tt>doc/</tt> consists of the Doxygen config and special pages
+  like this one
+ */
