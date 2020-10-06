@@ -17,5 +17,6 @@
 #include "ast.h"
 
 void lang_builtin_fn_print(struct ast_node *args);
+void lang_builtin_fn_println(struct ast_node *args);
 
 #endif /* ifndef H_LANG_BUILTIN */

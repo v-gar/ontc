@@ -97,6 +97,8 @@ static int execute_call(struct ast_node *call_node)
 
 		if (strcmp("print", name) == 0) {
 			lang_builtin_fn_print(args);
+		} else if (strcmp("println", name) == 0) {
+			lang_builtin_fn_println(args);
 		} else {
 			printf("[E] unknown function...\n");
 			return 1;

@@ -35,3 +35,25 @@ void lang_builtin_fn_print(struct ast_node *args)
 
 	printf("%s", print_str);
 }
+
+void lang_builtin_fn_println(struct ast_node *args)
+{
+	if (args == NULL) {
+		fprintf(stderr, "Error: print: argument missing\n");
+		return;
+	}
+
+	if (args->type != ANT_STR) {
+		fprintf(stderr, "Error: print: wrong type of argument\n");
+		return;
+	}
+
+	if (args->sibling != NULL) {
+		fprintf(stderr, "Error: print: too many arguments\n");
+		return;
+	}
+
+	char *print_str = ((struct ast_node_str *)args)->value;
+
+	printf("%s\n", print_str);
+}
