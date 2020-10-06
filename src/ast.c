@@ -17,6 +17,13 @@
 
 #include "ast.h"
 
+/**
+ * Helper macro for initializing a node,
+ * i.e. allocating the struct (which can be arbitrarily passed to
+ * via strct), check whether the allocation was successful,
+ * initialize the node common pointers to NULL and set the type
+ * to the value ant.
+ */
 #define INIT_NODE(strct, ant) \
 	struct strct *node = malloc(sizeof(struct strct)); \
 	if (!node) { \

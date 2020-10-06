@@ -233,16 +233,21 @@ fol_stmt:
 triple_stmt:
   /* Unary relation like "isReadOnly" */
   scope
-  /* Binary relation like "subclassOf <object>" */
-| scope '<' addr '>'
-  /* Binary relation with literal value / const */
-| scope const
+  /* Binary relation like "subclassOf <object>" or const */
+| scope triple_obj
   /* Unary relation with an object */
-| '<' addr '>' scope
-  /* Binary relation between two objects */
-| '<' addr '>' scope '<' addr '>'
-  /* Binary relation between object and const */
-| '<' addr '>' scope const
+| triple_subj scope
+  /* Binary relation between two objects or one object and const */
+| triple_subj scope triple_obj
+;
+
+triple_subj:
+  '<' addr '>'
+;
+
+triple_obj:
+  '<' addr '>'
+| const
 ;
 
 /* == Functions == */

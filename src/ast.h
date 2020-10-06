@@ -20,42 +20,124 @@
  * \brief Types of abstract syntax tree nodes
  */
 enum ast_node_type {
+	/**
+	 * Undefined node type.
+	 * Can be used in order to initialize a node
+	 * set the type later.
+	 */
 	ANT_UNDEFINED,
 
+	/**
+	 * Translation unit.
+	 * This is the root of the AST and should
+	 * appear at least one time.
+	 */
 	ANT_TRANSUNIT,
 
+	/* == SPECIAL NODES == */
+
+	/**
+	 * Integer node.
+	 * Nodes with this type are ast_node_int
+	 * and can be casted to this struct as they
+	 * hold a special value: the integer.
+	 */
 	ANT_INT,
+
+	/**
+	 * Float node.
+	 * Nodes with this type are ast_node_float
+	 * and can be casted to this struct as they
+	 * hold a special value:
+	 * the floating point number.
+	 */
 	ANT_FLOAT,
+
+	/**
+	 * String node.
+	 * Nodes with this type are ast_node_str
+	 * and can be casted to this struct as they
+	 * hold a special value: the pointer to the string.
+	 */
 	ANT_STR,
+
+	/**
+	 * Scope node.
+	 * Contains everything with a scope.
+	 */
 	ANT_SCOPE,
+
+	/**
+	 * Call node.
+	 * Contains function calls.
+	 *
+	 * It has one one more children:
+	 *
+	 * 1. a pointer to the function/class name, i.e. an ANT_SCOPE
+	 * 2. the args
+	 */
 	ANT_CALL,
+
+	/**
+	 * Incremental node.
+	 * Increment or decrement the value.
+	 */
 	ANT_INC,
 
-	/* Operations */
-	ANT_BADD, /* binary */
-	ANT_BSUB, /* binary */
+	/* == Operations == */
+
+	/**
+	 * Arithmetic binary addition node.
+	 */
+	ANT_BADD,
+
+	/**
+	 * Arithmetic binary subtraction node.
+	 */
+	ANT_BSUB,
+
+	/**
+	 * Arithmetic multiplication node.
+	 */
 	ANT_MUL,
+
+	/**
+	 * Arithmetic division node.
+	 */
 	ANT_DIV,
+
+	/**
+	 * Arithmetic modulo node.
+	 */
 	ANT_MOD,
+
+	/**
+	 * Assignment node.
+	 */
 	ANT_ASSIGN,
 
+	/**
+	 * Function node.
+	 *
+	 * A function node has two children:
+	 *
+	 * 1. the first node points to a ANT_SIG node
+	 * 2. the second node points to the first imperative node
+	 */
 	ANT_FUNC,
+
+	/**
+	 * Function signature node.
+	 *
+	 * The function siganture node contains one child:
+	 * the name of the function which is an ANT_STR.
+	 */
 	ANT_SIG,
 
-	ANT_TFACT /* triple fact */
-};
-
-enum ast_unary_op {
-	UOP_MINUS,
-	UOP_PLUS
-};
-
-enum ast_binary_op {
-	BOP_ADD,
-	BOP_SUB,
-	BOP_MUL,
-	BOP_DIV,
-	BOP_MOD
+	/**
+	 * Triple fact for the ontology.
+	 */
+	ANT_TFACT
 };
 
 /**
@@ -116,28 +198,90 @@ struct ast_node_str {
 	char *value;
 };
 
+/**
+ * Create a new ::ANT_INT node.
+ */
 struct ast_node *ast_new_int(int value);
+
+/**
+ * Create a new ::ANT_FLOAT node.
+ */
 struct ast_node *ast_new_float(float value);
+
+/**
+ * Create a new ::ANT_STR node.
+ */
 struct ast_node *ast_new_str(char *value);
+
+/**
+ * Create a new ::ANT_SCOPE node with one namespace element.
+ * More namespaces element can be added using ::ast_scope_add().
+ */
 struct ast_node *ast_new_scope(struct ast_node *value);
+
+
+/**
+ * Add new ::ANT_CALL node.
+ */
 struct ast_node *ast_new_call(struct ast_node *callee,
 		struct ast_node *arglist);
+
+/**
+ * Create new binary operation node.
+ *
+ * \param oper Operator like '+', '-', '*', '/', '%'
+ * \param operand1 LHS operand
+ * \param operand2 RHS operand
+ */
 struct ast_node *ast_new_binop(char oper, struct ast_node *operand1,
 		struct ast_node *operand2);
+
+/**
+ * Create new signature node.
+ */
 struct ast_node *ast_new_sig(struct ast_node *name);
+
+/**
+ * Create new function node.
+ */
 struct ast_node *ast_new_func(struct ast_node *sig,
 		struct ast_node *block);
 
+/**
+ * Create new translation unit node (::ANT_TRANSUNIT).
+ * The node should occur at least once in an AST.
+ */
 struct ast_node *ast_new_transunit(struct ast_node *first);
 
+/**
+ * Add new sibling to an existing node.
+ */
 struct ast_node *ast_add_seq(struct ast_node *node,
 		struct ast_node *successor);
+
+/**
+ * Add a new scope to an existing ::ANT_SCOPE node.
+ */
 struct ast_node *ast_scope_add(struct ast_node *node,
 		struct ast_node *successor);
 
+/**
+ * Validate an AST.
+ *
+ * \param root ::ANT_TRANSUNIT node
+ * \return 0 if valid or 1 if not
+ */
 int ast_validate(struct ast_node *root);
 
 /* debugging tools */
+/**
+ * Print AST for debugging purposes to stdout.
+ *
+ * AST should be validated using ::ast_validate()
+ * beforehand.
+ *
+ * \param root ::ANT_TRANSUNIT node
+ */
 void ast_print(struct ast_node *root);
 
 #endif /* ifndef H_AST */
