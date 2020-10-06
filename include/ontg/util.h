@@ -1,5 +1,5 @@
 /*
- * src/util.h
+ * include/ontg/util.h
  *
  * Utilities like singly-linked list nodes, etc.
  *

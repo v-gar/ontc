@@ -1,5 +1,5 @@
 /*
- * src/onto.h
+ * include/ontg/onto.h
  *
  * Contains structs and functions for the ontology system.
  *

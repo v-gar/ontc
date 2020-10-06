@@ -1,5 +1,5 @@
 /*
- * src/lex.l
+ * lib/oxpl/lex.l
  *
  * Lexer for OXPL
  *

@@ -1,5 +1,5 @@
 /*
- * src/ast.c
+ * lib/oxpl/ast.c
  *
  * Abstract Syntax Tree
  *

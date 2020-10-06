@@ -1,5 +1,5 @@
 /*
- * src/parse.y
+ * lib/oxpl/parse.y
  *
  * Parser for OXPL
  *

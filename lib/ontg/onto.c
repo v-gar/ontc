@@ -1,5 +1,5 @@
 /*
- * src/onto.c
+ * lib/ontg/onto.c
  *
  * Main ontology functions for constructing and maintaining
  * ontology databases.
@@ -9,7 +9,7 @@
 
 /**
  * \file onto.c
- * \brief Function for the manipulation of ontology databases
+ * \brief Functions for the manipulation of ontology databases
  */
 
 #include <stdlib.h>
