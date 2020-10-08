@@ -147,6 +147,36 @@ struct ast_node *ast_new_func(struct ast_node *sig,
 	return (struct ast_node *)node;
 }
 
+struct ast_node *ast_new_address(struct ast_node *scope,
+		struct ast_node *param)
+{
+	INIT_NODE(ast_node, ANT_ADDRESS);
+
+	node->child = scope;
+
+	if (param != NULL)
+		node->child->sibling = param;
+
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_tfact(struct ast_node *subj,
+		struct ast_node *rel, struct ast_node *obj)
+{
+	INIT_NODE(ast_node, ANT_TFACT);
+
+	if (rel == NULL) {
+		fprintf(stderr, "[A] Error: fact rel is NULL\n");
+		return NULL;
+	}
+
+	node->child = rel;
+	node->child->sibling = subj;
+	node->child->sibling->sibling = obj;
+
+	return (struct ast_node *)node;
+}
+
 struct ast_node *ast_new_transunit(struct ast_node *first)
 {
 	INIT_NODE(ast_node, ANT_TRANSUNIT);

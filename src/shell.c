@@ -50,11 +50,10 @@ static inline void append_newline(char **dst, char *src, int *i);
 /**
  * Start the REPL shell.
  */
-void start_repl_shell(void)
+void start_repl_shell(struct ontology_database *db)
 {
 	int active = 1; // 0 = exit
 
-	struct ontology_database *db = NULL;
 	printf("ontc interactive shell\n");
 	printf("Enter \"help\" for a list of available commands.\n");
 

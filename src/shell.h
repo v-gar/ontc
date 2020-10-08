@@ -14,6 +14,8 @@
  * \brief Interface for the REPL shell
  */
 
-void start_repl_shell(void);
+#include "onto.h"
+
+void start_repl_shell(struct ontology_database *kb);
 
 #endif

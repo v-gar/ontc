@@ -90,4 +90,15 @@ void ontology_add_resource(struct ontology_database *db,
 		struct ontology_resource *res);
 void ontology_add_fact(struct ontology_database *db,
 		struct ontology_fact *fact);
+
+struct ontology_resource *ontology_find_resource(struct ontology_database *db,
+		char *name);
+
+int ontology_check_fact(struct ontology_database *db,
+		struct ontology_fact *fact);
+struct sl_list_node *ontology_query_triple(struct ontology_database *db,
+		struct ontology_resource *rel,
+		struct ontology_resource *sbj,
+		struct ontology_resource *obj);
+
 #endif

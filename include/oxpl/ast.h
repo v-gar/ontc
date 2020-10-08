@@ -68,6 +68,18 @@ enum ast_node_type {
 	ANT_SCOPE,
 
 	/**
+	 * Address node.
+	 *
+	 * An address node is an extended ::ANT_SCOPE
+	 * as you can address mores resources, even
+	 * function parameters.
+	 *
+	 * The left child points an ::ANT_SCOPE,
+	 * the right child to an ::ANT_STR.
+	 */
+	ANT_ADDRESS,
+
+	/**
 	 * Call node.
 	 * Contains function calls.
 	 *
@@ -136,6 +148,12 @@ enum ast_node_type {
 
 	/**
 	 * Triple fact for the ontology.
+	 *
+	 * Triple facts have three children:
+	 *
+	 * 1. the relation / predicate (::ANT_SCOPE)
+	 * 2. the subject (::ANT_ADDR)
+	 * 3. the object (::ANT_SCOPE)
 	 */
 	ANT_TFACT
 };
@@ -246,6 +264,18 @@ struct ast_node *ast_new_sig(struct ast_node *name);
  */
 struct ast_node *ast_new_func(struct ast_node *sig,
 		struct ast_node *block);
+
+/**
+ * Create new address node.
+ */
+struct ast_node *ast_new_address(struct ast_node *scope,
+		struct ast_node *param);
+
+/**
+ * Create new triple fact.
+ */
+struct ast_node *ast_new_tfact(struct ast_node *subj,
+		struct ast_node *rel, struct ast_node *obj);
 
 /**
  * Create new translation unit node (::ANT_TRANSUNIT).

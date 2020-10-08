@@ -32,14 +32,23 @@ void start_interpreter(char *filename)
 	fclose(file);
 }
 
+void start_dbgon(char *filename)
+{
+	FILE *file = fopen(filename, "r");
+	debug_ontology(file);
+	fclose(file);
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc == 3) {
 		if (strcmp("run", argv[1]) == 0)
 			start_interpreter(argv[2]);
+		else if (strcmp("dbgon", argv[1]) == 0)
+			start_dbgon(argv[2]);
 	} else if (argc == 2) {
 		if (strcmp("shell", argv[1]) == 0)
-			start_repl_shell();
+			start_repl_shell(NULL);
 	} else if (argc < 2)
 		print_help();
 	return 0;

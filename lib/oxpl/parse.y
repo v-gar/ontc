@@ -91,7 +91,9 @@
 		logical_and_expr logical_or_expr
 		conditional_expr assign_expr expr
 		expr_stmt imper_stmt imper_block imper_block_stmt
-		sig func callarglist
+		triple_stmt triple_subj triple_obj
+		fact decl
+		sig func callarglist addr
 		stmt tunit start
 
 %%
@@ -105,7 +107,7 @@ tunit:
 | tunit stmt { $$ = ast_add_seq($1, $2); }
 
 stmt:
-  decl { /* TODO */ $$ = NULL; }
+  decl
 | func
 ;
 
@@ -163,11 +165,11 @@ scope:
  */
 addr:
   /* just a scope */
-  scope
+  scope	{ $$ = ast_new_address($1, NULL); }
   /* scope with property part */
 | scope '.' addr_props
   /* scope with function arg addr */
-| scope '#' IDENTIFIER
+| scope '#' IDENTIFIER { $$ = ast_new_address($1, ast_new_str($3)); }
   /* combined: scope with prop and ONE function arg addr */
 | scope '.' addr_props '#' IDENTIFIER
 ;
@@ -181,8 +183,8 @@ addr_props:
 
 decl:
   fact
-| class_sel class_decl_block
-| class_sel ';'
+| class_sel class_decl_block { /* TODO */ $$ = NULL; }
+| class_sel ';' { /* TODO */ $$ = NULL; }
 ;
 
 /* imper_decl: VAR assign_expr; */
@@ -209,8 +211,8 @@ class_decl_block_stmt:
 
 /* == Ontology == */
 fact:
-  fol_stmt '.'
-| triple_stmt '.'
+  fol_stmt '.' { /* TODO */ $$ = NULL; }
+| triple_stmt '.' { $$ = $1; }
 ;
 
 /*
@@ -236,17 +238,17 @@ triple_stmt:
   /* Binary relation like "subclassOf <object>" or const */
 | scope triple_obj
   /* Unary relation with an object */
-| triple_subj scope
+| triple_subj scope { $$ = ast_new_tfact($1, $2, NULL); }
   /* Binary relation between two objects or one object and const */
-| triple_subj scope triple_obj
+| triple_subj scope triple_obj { $$ = ast_new_tfact($1, $2, $3); }
 ;
 
 triple_subj:
-  '<' addr '>'
+  '<' addr '>' { $$ = $2; }
 ;
 
 triple_obj:
-  '<' addr '>'
+  '<' addr '>' { $$ = $2; }
 | const
 ;
 

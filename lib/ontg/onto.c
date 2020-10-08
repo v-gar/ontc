@@ -104,6 +104,8 @@ void ontology_free_fact(struct ontology_fact *fact)
 
 /**
  * Create a resource.
+ *
+ * Note that you transfer the char ownership to this struct!
  */
 struct ontology_resource *ontology_create_resource(char *name)
 {
@@ -283,4 +285,138 @@ void ontology_add_fact(struct ontology_database *db,
 	}
 
 	*cursor = node;
+}
+
+struct ontology_resource *ontology_find_resource(struct ontology_database *db,
+		char *name)
+{
+	if (db == NULL || name == 0)
+		return NULL;
+
+	struct sl_list_node *cursor = db->resource_head;
+
+	while (NULL != cursor) {
+		struct ontology_resource *res = cursor->data;
+
+		if (strcmp(name, res->name) == 0)
+			return res;
+
+		cursor = cursor->next;
+	}
+
+	return NULL;
+}
+
+static int ontology_check_fact_args(
+		struct ontology_fact_argument_list_node *argcur,
+		struct ontology_fact_argument_list_node *kbargcur)
+{
+	while (argcur != NULL && kbargcur != NULL) {
+		if (argcur->argument == kbargcur->argument) {
+			argcur = argcur->next;
+			kbargcur = kbargcur->next;
+		} else
+			break;
+	}
+
+	return argcur == kbargcur ? 0 : 1;
+}
+
+int ontology_check_fact(struct ontology_database *db,
+		struct ontology_fact *fact)
+{
+	struct sl_list_node *cursor = db->fact_head;
+
+	while (NULL != cursor) {
+		/*
+		 * TODO: replace with something better as rudimentary ptr
+		 * check
+		 */
+		struct ontology_fact *kbfact = cursor->data;
+
+		if (kbfact->predicate != fact->predicate) {
+			/* continue searching */
+			cursor = cursor->next;
+			continue;
+		}
+
+		int result = ontology_check_fact_args(fact->argument_head,
+				kbfact->argument_head);
+
+		if (result == 0) {
+			return 0;
+		}
+
+		cursor = cursor->next;
+	}
+
+	/* fact missing? */
+	return 1;
+}
+
+static void add_to_query_result(struct sl_list_node **node,
+		struct ontology_resource *res)
+{
+	while (*node != NULL) {
+		node = &(*node)->next;
+	}
+
+	*node = malloc(sizeof(struct sl_list_node));
+	if (!*node) {
+		fprintf(stderr, "Error: OOM!\n");
+		return;
+	}
+
+	(*node)->data = res;
+	(*node)->next = NULL;
+}
+
+struct sl_list_node *ontology_query_triple(struct ontology_database *db,
+		struct ontology_resource *rel,
+		struct ontology_resource *sbj,
+		struct ontology_resource *obj)
+{
+	if (db == NULL)
+		return NULL;
+
+	if (sbj != NULL && obj != NULL) {
+		fprintf(stderr, "Error: no query goal\n");
+		return NULL;
+	}
+
+	struct sl_list_node *result = NULL;
+
+	struct sl_list_node *cursor = db->fact_head;
+
+	while (NULL != cursor) {
+		/*
+		 * TODO: replace with something better as rudimentary ptr
+		 * check
+		 */
+		struct ontology_fact *kbfact = cursor->data;
+
+		if (kbfact->predicate == rel) {
+			struct ontology_fact_argument_list_node *kbsbj =
+				kbfact->argument_head;
+			if (sbj == NULL && kbsbj->next != NULL) {
+				if (kbsbj->next->argument == obj) {
+					add_to_query_result(
+						&result,
+						kbsbj->argument
+					);
+				}
+			} else if (obj == NULL && kbsbj->next != NULL) {
+				if (kbsbj->argument == sbj) {
+					add_to_query_result(
+						&result,
+						kbsbj->next->argument
+					);
+				}
+			}
+		}
+
+		cursor = cursor->next;
+	}
+
+	return result;
 }

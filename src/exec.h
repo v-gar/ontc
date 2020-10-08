@@ -17,5 +17,6 @@
 #include <stdio.h>
 
 int exec_program(FILE *fp);
+int debug_ontology(FILE *fp);
 
 #endif /* ifndef H_EXEC */
