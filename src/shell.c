@@ -4,6 +4,8 @@
  * Main shell for experimenting with the ontology database.
  *
  * Copyright (c) 2020 Viktor Garske
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 /**

@@ -3,6 +3,8 @@
  *
  * Copyright (c) 2020 Viktor Garske
  *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * src/main.h
  *
  * This is the header file for the ontc command.

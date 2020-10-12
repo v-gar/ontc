@@ -4,6 +4,8 @@
  * Ontology Program executor interface
  *
  * Copyright (c) 2020 Viktor Garske
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #ifndef H_EXEC

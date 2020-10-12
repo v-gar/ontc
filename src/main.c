@@ -3,6 +3,8 @@
  *
  * Copyright (c) 2020 Viktor Garske
  *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * src/main.c
  *
  * This is the main file of the ontc command.

@@ -4,6 +4,8 @@
  * Contains structs and functions for the ontology system.
  *
  * Copyright (c) 2020 Viktor Garske
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #ifndef H_ONTOLOGY

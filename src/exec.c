@@ -4,6 +4,8 @@
  * Ontology Program executor
  *
  * Copyright (c) 2020 Viktor Garske
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 /**

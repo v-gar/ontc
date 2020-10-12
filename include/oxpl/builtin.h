@@ -4,6 +4,8 @@
  * Interface for built-in language elements
  *
  * Copyright (c) 2020 Viktor Garske
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #ifndef H_LANG_BUILTIN

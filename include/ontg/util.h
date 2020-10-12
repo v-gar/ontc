@@ -4,6 +4,8 @@
  * Utilities like singly-linked list nodes, etc.
  *
  * Copyright (c) 2020 Viktor Garske
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #ifndef H_UTIL
