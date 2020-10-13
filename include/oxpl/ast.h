@@ -131,6 +131,61 @@ enum ast_node_type {
 	ANT_ASSIGN,
 
 	/**
+	 * Equality operator node.
+	 */
+	ANT_EQ,
+
+	/**
+	 * Negative equality node.
+	 */
+	ANT_NEQ,
+
+	/**
+	 * Logical-and node.
+	 */
+	ANT_LAND,
+
+	/**
+	 * Logical-or node.
+	 */
+	ANT_LOR,
+
+	/**
+	 * Bitwise-and node.
+	 */
+	ANT_BAND,
+
+	/**
+	 * (Bitwise) inclusive-or node.
+	 */
+	ANT_BOR,
+
+	/**
+	 * Exclusive-or node.
+	 */
+	ANT_XOR,
+
+	/**
+	 * Less-equal node.
+	 */
+	ANT_LEQ,
+
+	/**
+	 * Greater-equal node.
+	 */
+	ANT_GEQ,
+
+	/**
+	 * Shift-left node.
+	 */
+	ANT_SHIFTL,
+
+	/**
+	 * Shift-right node.
+	 */
+	ANT_SHIFTR,
+
+	/**
 	 * Function node.
 	 *
 	 * A function node has two children:
@@ -257,6 +312,19 @@ struct ast_node *ast_new_binop(char oper, struct ast_node *operand1,
 		struct ast_node *operand2);
 
 /**
+ * Create new binary operation node but for operators with
+ * more than one character.
+ *
+ * This will remap the operator and call ::ast_new_binop().
+ *
+ * \param oper Operator like "<<", ">>", "&&", "==", ...
+ * \param operand1 LHS operand
+ * \param operand2 RHS operand
+ */
+struct ast_node *ast_new_binop_s(char *oper_s, struct ast_node *operand1,
+		struct ast_node *operand2);
+
+/**
  * Create new signature node.
  */
 struct ast_node *ast_new_sig(struct ast_node *name);
@@ -315,5 +383,12 @@ int ast_validate(struct ast_node *root);
  * \param root ::ANT_TRANSUNIT node
  */
 void ast_print(struct ast_node *root);
+
+/**
+ * Print DOT graphs of the AST to stdout.
+ *
+ * \param root ::ANT_TRANSUNIT node
+ */
+void ast_print_dot(struct ast_node *root);
 
 #endif /* ifndef H_AST */

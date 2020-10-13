@@ -18,6 +18,12 @@
 #else
 #define DBGMSG(x) ;
 #endif
+
+#define OPS(s) yylval.oper_s = malloc(3); \
+	if (yylval.oper_s == 0) \
+		fprintf(stderr, "OOM!\n"); \
+	else \
+		strcpy(yylval.oper_s, s);
 %}
 
 %option noyywrap nodefault yylineno
@@ -74,13 +80,13 @@
 "^"				{ return BIT_XOR_OP; }
 
 "==" |
-"!="				{ return EQ_OP; }
+"!="				{ OPS(yytext); return EQ_OP; }
 
 "<=" |
-">="				{ return REL_EQ_OP; }
+">="				{ OPS(yytext); return REL_EQ_OP; }
 
 "<<" |
-">>"				{ return SHIFT_OP; }
+">>"				{ OPS(yytext); return SHIFT_OP; }
 
 "*" |
 "/" |

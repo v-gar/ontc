@@ -37,6 +37,34 @@
 	node->type = ant;
 
 
+/**
+ * Set the type for a binary operation node in the switch-statement.
+ */
+#define SET_BINOP_TYPE(ch, ant_type) case ch: node->type = ant_type; break;
+
+/**
+ * Multi-character operators used in ast_new_binop_s.
+ * Values start at 20 because it is an irrelevant ASCII range
+ */
+enum multicharacter_operator {
+	/** Multi-char operator equals: == */
+	MCOP_EQ     = 20,
+	/** Multi-character operator not equals: != */
+	MCOP_NEQ    = 21,
+	/** Multi-character operator logical and: && */
+	MCOP_LAND   = 22,
+	/** Multi-character operator logical or: || */
+	MCOP_LOR    = 23,
+	/** Multi-character operator less equals: <= */
+	MCOP_LEQ    = 24,
+	/** Multi-character operator greater equals: >= */
+	MCOP_GEQ    = 25,
+	/** Multi-character operator shift left: << */
+	MCOP_SHIFTL = 26,
+	/** Multi-character operator shift right: >> */
+	MCOP_SHIFTR = 27
+};
+
 struct ast_node *ast_new_int(int value)
 {
 	INIT_NODE(ast_node_int, ANT_INT);
@@ -107,14 +135,28 @@ struct ast_node *ast_new_binop(char oper, struct ast_node *operand1,
 
 	switch (oper) {
 		/* arithmetic operations */
-		case '+': node->type = ANT_BADD; break;
-		case '-': node->type = ANT_BSUB; break;
-		case '*': node->type = ANT_MUL;  break;
-		case '/': node->type = ANT_DIV;  break;
-		case '%': node->type = ANT_MOD;  break;
+		SET_BINOP_TYPE('+', ANT_BADD);
+		SET_BINOP_TYPE('-', ANT_BSUB);
+		SET_BINOP_TYPE('*', ANT_MUL);
+		SET_BINOP_TYPE('/', ANT_DIV);
+		SET_BINOP_TYPE('%', ANT_MOD);
 
 		/* assignments */
-		case '=': node->type = ANT_ASSIGN; break;
+		SET_BINOP_TYPE('=', ANT_ASSIGN);
+
+		/* relational operators */
+		SET_BINOP_TYPE(MCOP_EQ, ANT_EQ);
+		SET_BINOP_TYPE(MCOP_NEQ, ANT_NEQ);
+		SET_BINOP_TYPE(MCOP_LAND, ANT_LAND);
+		SET_BINOP_TYPE(MCOP_LOR, ANT_LOR);
+		SET_BINOP_TYPE(MCOP_LEQ, ANT_LEQ);
+		SET_BINOP_TYPE(MCOP_GEQ, ANT_GEQ);
+		SET_BINOP_TYPE(MCOP_SHIFTL, ANT_SHIFTL);
+		SET_BINOP_TYPE(MCOP_SHIFTR, ANT_SHIFTR);
+
+		SET_BINOP_TYPE('&', ANT_BAND);
+		SET_BINOP_TYPE('|', ANT_BOR);
+		SET_BINOP_TYPE('^', ANT_XOR);
 
 		/* anything else */
 		default:
@@ -127,6 +169,41 @@ struct ast_node *ast_new_binop(char oper, struct ast_node *operand1,
 	node->child->sibling = operand2;
 
 	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_binop_s(char *oper_s, struct ast_node *operand1,
+		struct ast_node *operand2)
+{
+	char oper;
+
+	/*
+	 * The basic idea is to use oper anyway and use an internal
+	 * mapping that ast_new_binop() unterstands in order to exploit
+	 * the value range of an char.
+	 */
+
+	if (!strcmp(oper_s, "=="))
+		oper = MCOP_EQ;
+	else if (!strcmp(oper_s, "!="))
+		oper = MCOP_NEQ;
+	else if (!strcmp(oper_s, "&&"))
+		oper = MCOP_LAND;
+	else if (!strcmp(oper_s, "||"))
+		oper = MCOP_LOR;
+	else if (!strcmp(oper_s, "<="))
+		oper = MCOP_LEQ;
+	else if (!strcmp(oper_s, ">="))
+		oper = MCOP_GEQ;
+	else if (!strcmp(oper_s, "<<"))
+		oper = MCOP_SHIFTL;
+	else if (!strcmp(oper_s, ">>"))
+		oper = MCOP_SHIFTR;
+	else {
+		fprintf(stderr, "[A] Error: unknown binop '%s '\n", oper_s);
+		return NULL;
+	}
+
+	return ast_new_binop(oper, operand1, operand2);
 }
 
 struct ast_node *ast_new_sig(struct ast_node *name)
@@ -243,6 +320,30 @@ void ast_print(struct ast_node *root)
 	ast_print(root->child);
 	printf("Sibling:\n");
 	ast_print(root->sibling);
+}
+
+void ast_print_dot(struct ast_node *root)
+{
+	if (root == NULL)
+		return;
+
+	if (root->type == ANT_TRANSUNIT)
+		printf("digraph ast\n{\n");
+
+	struct ast_node *cur = root->child;
+
+	while (cur != NULL) {
+		printf("\tP%ld_T%d -> P%ld_T%d;\n",
+				(long) root, root->type,
+				(long) cur, cur->type);
+		cur = cur->sibling;
+	}
+
+	ast_print_dot(root->sibling);
+	ast_print_dot(root->child);
+
+	if (root->type == ANT_TRANSUNIT)
+		printf("}\n");
 }
 
 int ast_validate(struct ast_node *root)

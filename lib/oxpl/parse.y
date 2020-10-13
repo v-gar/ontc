@@ -9,6 +9,7 @@
  */
 %{
   #include <stdio.h>
+  #include <string.h>
 
   #include "parse.h"
   #include "ast.h"
@@ -39,6 +40,7 @@
 	char *strval;
 
 	char oper; /* operator */
+	char *oper_s;
 };
 
 /* Basic tokens */
@@ -53,9 +55,9 @@
 %token BIT_AND_OP
 %token BIT_XOR_OP
 
-%token EQ_OP
-%token REL_EQ_OP
-%token SHIFT_OP
+%token <oper_s> EQ_OP
+%token <oper_s> REL_EQ_OP
+%token <oper_s> SHIFT_OP
 
 %token <oper> ADD_OP
 %token <oper> MUL_OP
@@ -97,6 +99,8 @@
 		fact decl
 		sig func callarglist addr
 		stmt tunit start
+
+%type <oper_s>	rel_op
 
 %%
 start:
@@ -338,43 +342,49 @@ conditional_expr:
 
 logical_or_expr:
   logical_and_expr
-| logical_or_expr LOG_OR_OP logical_and_expr
+| logical_or_expr LOG_OR_OP logical_and_expr {
+	$$ = ast_new_binop_s("||", $1, $3);
+}
 ;
 
 logical_and_expr:
   inclusive_or_expr
-| logical_and_expr LOG_AND_OP inclusive_or_expr
+| logical_and_expr LOG_AND_OP inclusive_or_expr {
+	$$ = ast_new_binop_s("&&", $1, $3);
+}
 ;
 
 inclusive_or_expr:
   exclusive_or_expr
-| inclusive_or_expr BIT_OR_OP exclusive_or_expr
+| inclusive_or_expr BIT_OR_OP exclusive_or_expr {
+	$$ = ast_new_binop('|', $1, $3);
+}
 ;
 
 exclusive_or_expr:
   and_expr
-| exclusive_or_expr BIT_XOR_OP and_expr
+| exclusive_or_expr BIT_XOR_OP and_expr { $$ = ast_new_binop('^', $1, $3); }
 ;
 
 and_expr:
   eq_expr
-| and_expr BIT_AND_OP eq_expr
+| and_expr BIT_AND_OP eq_expr { $$ = ast_new_binop('&', $1, $3); }
 ;
 
 /* Equality expressions */
 eq_expr:
   rel_expr
-| eq_expr EQ_OP rel_expr
+| eq_expr EQ_OP rel_expr { $$ = ast_new_binop_s($2, $1, $3); }
 ;
 
 rel_expr:
   shift_expr
-| rel_expr rel_op shift_expr
+| rel_expr rel_op shift_expr { $$ = ast_new_binop_s($2, $1, $3); }
 ;
 
 shift_expr:
   add_expr
-| shift_expr SHIFT_OP add_expr
+| shift_expr SHIFT_OP add_expr { $$ = ast_new_binop_s($2, $1, $3); }
 ;
 
 /* Arithmetic */
@@ -410,7 +420,7 @@ callarglist:
 primary_expr:
   scope
 | const
-| '(' expr ')' { /* TODO */ }
+| '(' expr ')' { $$ = $2; }
 ;
 
 const:
@@ -427,8 +437,20 @@ unary_op:
 ;
 
 rel_op:
-  '<'
-| '>'
+  '<' {
+	if (0 == (yylval.oper_s = malloc(2))) {
+		fprintf(stderr, "[P] OOM!\n");
+	} else {
+		strcpy(yylval.oper_s, "<");
+	}
+}
+| '>' {
+	if (0 == (yylval.oper_s = malloc(2))) {
+		fprintf(stderr, "[P] OOM!\n");
+	} else {
+		strcpy(yylval.oper_s, ">");
+	}
+}
 | REL_EQ_OP
 ;
 
