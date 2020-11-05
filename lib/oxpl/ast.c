@@ -239,6 +239,17 @@ struct ast_node *ast_new_address(struct ast_node *scope,
 	return (struct ast_node *)node;
 }
 
+struct ast_node *ast_new_fact(struct ast_node *rel,
+		struct ast_node *args)
+{
+	INIT_NODE(ast_node, ANT_FACT);
+
+	node->child = rel;
+	node->child->sibling = args;
+
+	return (struct ast_node *)node;
+}
+
 struct ast_node *ast_new_tfact(struct ast_node *subj,
 		struct ast_node *rel, struct ast_node *obj)
 {
@@ -261,6 +272,85 @@ struct ast_node *ast_new_transunit(struct ast_node *first)
 	INIT_NODE(ast_node, ANT_TRANSUNIT);
 
 	node->child = first;
+
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_cond(struct ast_node *cond,
+		struct ast_node *then, struct ast_node *else_)
+{
+	INIT_NODE(ast_node, ANT_COND);
+
+	node->child = cond;
+	node->child->sibling = then; /* TODO: introduce ANT_SEQ */
+	node->child->sibling->sibling = else_;
+
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_ctern(struct ast_node *cond,
+		struct ast_node *then, struct ast_node *else_)
+{
+	/*
+	 * very similar to ast_new_cond
+	 *
+	 * Nevertheless separate functions will be helpful
+	 * as ANT_COND has then/else-blocks and ANT_CTERN
+	 * has then/else-expressions.
+	 */
+	INIT_NODE(ast_node, ANT_CTERN);
+
+	node->child = cond;
+	node->child->sibling = then;
+	node->child->sibling->sibling = else_;
+
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_ret(struct ast_node *expr)
+{
+	INIT_NODE(ast_node, ANT_RET);
+
+	if (expr != NULL)
+		node->child = expr;
+
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_jump(char type)
+{
+	int ast_type;
+
+	switch (type) {
+		case 'b': ast_type = ANT_BREAK; break;
+		case 'c': ast_type = ANT_CONT; break;
+		default: return NULL;
+	}
+
+	INIT_NODE(ast_node, ast_type);
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_while(struct ast_node *condition,
+		struct ast_node *block)
+{
+	INIT_NODE(ast_node, ANT_WHILE);
+
+	node->child = condition;
+	node->child->sibling = block;
+
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_for(struct ast_node *identifier,
+		struct ast_node *iterable,
+		struct ast_node *block)
+{
+	INIT_NODE(ast_node, ANT_FOR);
+
+	node->child = identifier;
+	node->child->sibling = iterable;
+	node->child->sibling->sibling = block;
 
 	return (struct ast_node *)node;
 }

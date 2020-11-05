@@ -95,7 +95,9 @@
 		logical_and_expr logical_or_expr
 		conditional_expr assign_expr expr
 		expr_stmt imper_stmt imper_block imper_block_stmt
-		triple_stmt triple_subj triple_obj
+		fol_stmt triple_stmt triple_subj triple_obj
+		slct_stmt slct_conditional jump_stmt iter_stmt
+		arglist arglist_args
 		fact decl
 		sig func callarglist addr
 		stmt tunit start
@@ -121,9 +123,9 @@ stmt:
 imper_stmt:
   imper_block
 | expr_stmt
-| iter_stmt { /* TODO */ $$ = NULL; }
-| slct_stmt { /* TODO */ $$ = NULL; }
-| jump_stmt { /* TODO */ $$ = NULL; }
+| iter_stmt
+| slct_stmt
+| jump_stmt
 ;
 
 /* Expression statement */
@@ -134,9 +136,13 @@ expr_stmt:
 
 /* Conditional / select statements */
 slct_stmt:
-  IF slct_conditional imper_block
-| IF slct_conditional imper_block ELSE imper_block
-| IF slct_conditional imper_block ELSE slct_stmt
+  IF slct_conditional imper_block { $$ = ast_new_cond($2, $3, NULL); }
+| IF slct_conditional imper_block ELSE imper_block {
+	$$ = ast_new_cond($2, $3, $5);
+}
+| IF slct_conditional imper_block ELSE slct_stmt {
+	$$ = ast_new_cond($2, $3, $5);
+}
 ;
 
 slct_conditional:
@@ -145,16 +151,18 @@ slct_conditional:
 
 /* Loops */
 iter_stmt:
-  WHILE conditional_expr imper_block
-| FOR IDENTIFIER IN expr imper_block
+  WHILE conditional_expr imper_block { $$ = ast_new_while($2, $3); }
+| FOR IDENTIFIER IN expr imper_block {
+	$$ = ast_new_for(ast_new_str($2), $4, $5);
+}
 ;
 
 /* Jumps */
 jump_stmt:
-  RETURN expr ';'
-| RETURN ';'
-| CONTINUE ';'
-| BREAK ';'
+  RETURN expr ';' { $$ = ast_new_ret($2); }
+| RETURN ';' { $$ = ast_new_ret(NULL); }
+| CONTINUE ';' { $$ = ast_new_jump('c'); }
+| BREAK ';' { $$ = ast_new_jump('b'); }
 ;
 
 /* == Basic addresses == */
@@ -217,7 +225,7 @@ class_decl_block_stmt:
 
 /* == Ontology == */
 fact:
-  fol_stmt '.' { /* TODO */ $$ = NULL; }
+  fol_stmt '.' { $$ = $1; }
 | triple_stmt '.' { $$ = $1; }
 ;
 
@@ -228,7 +236,7 @@ fact:
  *          ^ scope     ^ arglist
  */
 fol_stmt:
-  scope arglist
+  scope arglist { $$ = ast_new_fact($1, $2); }
 ;
 
 /*
@@ -297,14 +305,14 @@ fn_arglist_args:
 
 /* Function argument list */
 arglist:
-  '(' arglist_args ')'
-| '(' ')'
+  '(' arglist_args ')' { $$ = $2; }
+| '(' ')' { $$ = NULL; }
 ;
 
 /* Function argument list element */
 arglist_args:
   addr
-| arglist_args ',' addr
+| arglist_args ',' addr { $$ = ast_add_seq($1, $3); }
 ;
 
 /* == Blocks == */
@@ -337,7 +345,9 @@ assign_expr:
 
 conditional_expr:
   logical_or_expr
-| logical_or_expr '?' conditional_expr ':' conditional_expr
+| logical_or_expr '?' conditional_expr ':' conditional_expr {
+	$$ = ast_new_ctern($1, $3, $5);
+}
 ;
 
 logical_or_expr:

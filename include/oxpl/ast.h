@@ -204,6 +204,14 @@ enum ast_node_type {
 	ANT_SIG,
 
 	/**
+	 * Facts in the style of first-order logic.
+	 *
+	 * 1. relation (::ANT_SCOPE)
+	 * 2. head of resources linked list
+	 */
+	ANT_FACT,
+
+	/**
 	 * Triple fact for the ontology.
 	 *
 	 * Triple facts have three children:
@@ -212,7 +220,67 @@ enum ast_node_type {
 	 * 2. the subject (::ANT_ADDR)
 	 * 3. the object (::ANT_SCOPE)
 	 */
-	ANT_TFACT
+	ANT_TFACT,
+
+	/**
+	 * Conditional.
+	 *
+	 * Contains three parts:
+	 *
+	 * 1. condition
+	 * 2. then-branch (if condition is true)
+	 * 3. else-branch (if condition is false)
+	 */
+	ANT_COND,
+
+	/**
+	 * Conditional using a ternary operator.
+	 *
+	 * Contains three children:
+	 *
+	 * 1. condition
+	 * 2. then-expr
+	 * 3. else-expr
+	 */
+	ANT_CTERN,
+
+	/**
+	 * Return statement.
+	 *
+	 * Optional child: statement
+	 */
+	ANT_RET,
+
+	/**
+	 * Continue statement
+	 */
+	ANT_CONT,
+
+	/**
+	 * Break statement
+	 */
+	ANT_BREAK,
+
+	/**
+	 * While loop.
+	 *
+	 * Contains:
+	 *
+	 * 1. condition
+	 * 2. imperative block
+	 */
+	ANT_WHILE,
+
+	/**
+	 * For loop
+	 *
+	 * Contains:
+	 *
+	 * 1. identifier
+	 * 2. iterable
+	 * 3. imperative block
+	 */
+	ANT_FOR,
 };
 
 /**
@@ -326,26 +394,83 @@ struct ast_node *ast_new_binop_s(char *oper_s, struct ast_node *operand1,
 
 /**
  * Create new signature node.
+ *
+ * \param name ::ANT_STR node with the name identifier
  */
 struct ast_node *ast_new_sig(struct ast_node *name);
 
 /**
  * Create new function node.
+ *
+ * \param sig ::ANT_SIG node
+ * \param block node sequence (same level)
  */
 struct ast_node *ast_new_func(struct ast_node *sig,
 		struct ast_node *block);
 
 /**
  * Create new address node.
+ *
+ * \param scope ::ANT_SCOPE node
+ * \param param ::ANT_STR node
  */
 struct ast_node *ast_new_address(struct ast_node *scope,
 		struct ast_node *param);
+
+/**
+ * Create new FOL fact
+ */
+struct ast_node *ast_new_fact(struct ast_node *rel,
+		struct ast_node *args);
 
 /**
  * Create new triple fact.
  */
 struct ast_node *ast_new_tfact(struct ast_node *subj,
 		struct ast_node *rel, struct ast_node *obj);
+
+/**
+ * Create new conditional (if statement).
+ *
+ * \param cond any type of expression node starting at ::ANT_CONT
+ * \param then then block
+ * \param else_ else block
+ */
+struct ast_node *ast_new_cond(struct ast_node *cond,
+		struct ast_node *then, struct ast_node *else_);
+
+/**
+ * Create new conditional (ternary statement).
+ */
+struct ast_node *ast_new_ctern(struct ast_node *cond,
+		struct ast_node *then, struct ast_node *else_);
+
+/**
+ * Create new return statement.
+ *
+ * \param expr Optional expression
+ */
+struct ast_node *ast_new_ret(struct ast_node *expr);
+
+/**
+ * Create new jump statement other than return.
+ *
+ * \param type 'b' for break, 'c' for continue
+ */
+struct ast_node *ast_new_jump(char type);
+
+/**
+ * Create new while loop.
+ */
+struct ast_node *ast_new_while(struct ast_node *condition,
+		struct ast_node *block);
+
+/**
+ * Create new for loop.
+ */
+struct ast_node *ast_new_for(struct ast_node *identifier,
+		struct ast_node *iterable,
+		struct ast_node *block);
 
 /**
  * Create new translation unit node (::ANT_TRANSUNIT).
