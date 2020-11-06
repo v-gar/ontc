@@ -25,6 +25,19 @@ In order to build ontc just run:
 
 The binary will be located in the build/ directory.
 
+Documentation
+-------------
+
+The documentation is located at doc/.
+It can be built using Doxygen (https://www.doxygen.nl/).
+
+Just run:
+
+	doxygen
+
+in the doc/ directory. An HTML and LaTeX version will then be
+generated.
+
 License
 -------
 
@@ -32,11 +45,11 @@ The ontology toolchain is made up of several components.
 
 The two libraries libontg and liboxpl are licensed under the
 GNU LGPL 2.1 (or later).
-Their source code can be found under lib/* and include/*.
+The source code of both libraries can be found at lib/ and include/.
 For more information please see COPYING.LESSER.
 
 The ontc command line tool is licensed under the GNU GPLv3 (or later).
-Its source code can be found under src/*.
+Its source code can be found under src/.
 For more information please see COPYING.
 
 Every source code file contains an SPDX license identifier which specifies
