@@ -20,6 +20,13 @@
 
   struct ast_node *parse_ast;
 
+  #define OPERSCPY(op, len, dest) \
+	if (0 == (dest = malloc(len + 1))) { \
+		fprintf(stderr, "[P] OOM!\n"); \
+	} else { \
+		strcpy(dest, op); \
+	}
+
 #define DEBUG 1
 #if DEBUG == 1
 #include <stdio.h>
@@ -93,17 +100,16 @@
 		rel_expr eq_expr
 		and_expr exclusive_or_expr inclusive_or_expr
 		logical_and_expr logical_or_expr
-		conditional_expr assign_expr expr
-		expr_stmt imper_stmt imper_block imper_block_stmt
+		conditional_expr assign_expr expr expr_stmt
+		imper_stmt imper_block imper_block_stmt imper_decl
 		fol_stmt triple_stmt triple_subj triple_obj
 		slct_stmt slct_conditional jump_stmt iter_stmt
-		arglist arglist_args
+		arglist arglist_args sig_var
 		fact decl
 		sig func callarglist addr
 		stmt tunit start
 
-%type <oper_s>	rel_op
-
+%type <oper_s>	rel_op unary_op
 %%
 start:
   %empty { parse_ast = NULL; }
@@ -201,8 +207,10 @@ decl:
 | class_sel ';' { /* TODO */ $$ = NULL; }
 ;
 
-/* imper_decl: VAR assign_expr; */
-imper_decl: VAR sig_var '=' conditional_expr ';';
+imper_decl:
+  VAR sig_var ';' { $$ = ast_new_vardecl($2, NULL); }
+| VAR sig_var '=' conditional_expr ';' { $$ = ast_new_vardecl($2, $4); }
+;
 
 /* Selectors, similar to CSS */
 
@@ -287,8 +295,8 @@ sig_ret:
 
 /* Function siganture variable (with optional type) */
 sig_var:
-  IDENTIFIER
-| IDENTIFIER ':' scope
+  IDENTIFIER { $$ = ast_new_sigvar(ast_new_str($1), NULL); }
+| IDENTIFIER ':' scope { $$ = ast_new_sigvar(ast_new_str($1), $3); }
 ;
 
 /* Function argument list */
@@ -323,9 +331,9 @@ imper_block:
 
 imper_block_stmt:
   imper_stmt
-| imper_decl { /* TODO */ $$ = NULL; }
+| imper_decl
 | imper_block_stmt imper_stmt { $$ = ast_add_seq($1, $2); }
-| imper_block_stmt imper_decl { /* TODO */ }
+| imper_block_stmt imper_decl { $$ = ast_add_seq($1, $2); }
 ;
 
 /*
@@ -410,7 +418,7 @@ mul_expr:
 
 unary_expr:
   postfix_expr
-| unary_op postfix_expr { /* TODO */ }
+| unary_op postfix_expr { $$ = ast_new_unop(0, $1, $2); }
 ;
 
 postfix_expr:
@@ -418,8 +426,8 @@ postfix_expr:
 | postfix_expr '(' callarglist ')' { $$ = ast_new_call($1, $3); }
 | postfix_expr '(' ')' { $$ = ast_new_call($1, NULL); }
 | postfix_expr '.' IDENTIFIER
-| postfix_expr INC_OP
-| postfix_expr DEC_OP
+| postfix_expr INC_OP { $$ = ast_new_unop(1, "++", $1); }
+| postfix_expr DEC_OP { $$ = ast_new_unop(1, "--", $1); }
 ;
 
 callarglist:
@@ -440,27 +448,22 @@ const:
 ;
 
 unary_op:
-  ADD_OP
-| NEG_OP
-| INC_OP
-| DEC_OP
+  ADD_OP { /* ADD_OP means + and - */
+	OPERSCPY("X", 1, $$); /* placeholder oper */
+	$$[0] = yylval.oper; /* here is the oper */
+	/*
+	 * this hack is neccessary as ADD_OP is a char and
+	 * not a (char *)
+	 */
+}
+| NEG_OP { OPERSCPY("!", 1, $$); }
+| INC_OP { OPERSCPY("++", 2, $$); }
+| DEC_OP { OPERSCPY("--", 2, $$); }
 ;
 
 rel_op:
-  '<' {
-	if (0 == (yylval.oper_s = malloc(2))) {
-		fprintf(stderr, "[P] OOM!\n");
-	} else {
-		strcpy(yylval.oper_s, "<");
-	}
-}
-| '>' {
-	if (0 == (yylval.oper_s = malloc(2))) {
-		fprintf(stderr, "[P] OOM!\n");
-	} else {
-		strcpy(yylval.oper_s, ">");
-	}
-}
+  '<' { OPERSCPY("<", 1, $$); }
+| '>' { OPERSCPY(">", 1, $$); }
 | REL_EQ_OP
 ;
 

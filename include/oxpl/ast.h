@@ -166,6 +166,16 @@ enum ast_node_type {
 	ANT_XOR,
 
 	/**
+	 * Less-than node.
+	 */
+	ANT_LT,
+
+	/**
+	 * Greater-than node.
+	 */
+	ANT_GT,
+
+	/**
 	 * Less-equal node.
 	 */
 	ANT_LEQ,
@@ -179,6 +189,31 @@ enum ast_node_type {
 	 * Shift-left node.
 	 */
 	ANT_SHIFTL,
+
+	/**
+	 * Post increment node.
+	 */
+	ANT_POSTINC,
+
+	/**
+	 * Post decrement node.
+	 */
+	ANT_POSTDEC,
+
+	/**
+	 * Prefix increment node.
+	 */
+	ANT_PREINC,
+
+	/**
+	 * Prefix decrement node.
+	 */
+	ANT_PREDEC,
+
+	/**
+	 * Negative sign operator node.
+	 */
+	ANT_NEGSIGN,
 
 	/**
 	 * Shift-right node.
@@ -202,6 +237,16 @@ enum ast_node_type {
 	 * the name of the function which is an ANT_STR.
 	 */
 	ANT_SIG,
+
+	/**
+	 * Variable signature
+	 *
+	 * Contains:
+	 *
+	 * 1. identifier
+	 * 2. scope
+	 */
+	ANT_SIGVAR,
 
 	/**
 	 * Facts in the style of first-order logic.
@@ -281,6 +326,14 @@ enum ast_node_type {
 	 * 3. imperative block
 	 */
 	ANT_FOR,
+
+	/**
+	 * Variable declaration node.
+	 *
+	 * 1. variable siganture (::ANT_SIGVAR)
+	 * 2. value (optiona)
+	 */
+	ANT_VARDECL
 };
 
 /**
@@ -393,11 +446,31 @@ struct ast_node *ast_new_binop_s(char *oper_s, struct ast_node *operand1,
 		struct ast_node *operand2);
 
 /**
+ * Create new unary operation.
+ *
+ * \param affix 0 = prefix, 1 = postfix
+ * \param oper Operator like "+", "-", "++"
+ * \param operand Operand
+ */
+struct ast_node *ast_new_unop(char affix, char *oper,
+		struct ast_node *operand);
+
+/**
  * Create new signature node.
  *
  * \param name ::ANT_STR node with the name identifier
  */
 struct ast_node *ast_new_sig(struct ast_node *name);
+
+/**
+ * Create new variable signature
+ *
+ * \param identifier IDENTIFIER
+ * \param type scope or NULL
+ */
+struct ast_node *ast_new_sigvar(struct ast_node *identifier,
+		struct ast_node *type);
+
 
 /**
  * Create new function node.
@@ -471,6 +544,15 @@ struct ast_node *ast_new_while(struct ast_node *condition,
 struct ast_node *ast_new_for(struct ast_node *identifier,
 		struct ast_node *iterable,
 		struct ast_node *block);
+
+/**
+ * Create new variable declaration.
+ *
+ * \param sigvar variable signature (::ANT_SIGVAR)
+ * \param val expression or NULL
+ */
+struct ast_node *ast_new_vardecl(struct ast_node *sigvar,
+		struct ast_node *val);
 
 /**
  * Create new translation unit node (::ANT_TRANSUNIT).

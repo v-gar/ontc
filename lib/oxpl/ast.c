@@ -154,6 +154,9 @@ struct ast_node *ast_new_binop(char oper, struct ast_node *operand1,
 		SET_BINOP_TYPE(MCOP_SHIFTL, ANT_SHIFTL);
 		SET_BINOP_TYPE(MCOP_SHIFTR, ANT_SHIFTR);
 
+		SET_BINOP_TYPE('<', ANT_LT);
+		SET_BINOP_TYPE('>', ANT_GT);
+
 		SET_BINOP_TYPE('&', ANT_BAND);
 		SET_BINOP_TYPE('|', ANT_BOR);
 		SET_BINOP_TYPE('^', ANT_XOR);
@@ -198,12 +201,59 @@ struct ast_node *ast_new_binop_s(char *oper_s, struct ast_node *operand1,
 		oper = MCOP_SHIFTL;
 	else if (!strcmp(oper_s, ">>"))
 		oper = MCOP_SHIFTR;
+	/*
+	 * now some single-char ops follow which are passed to this
+	 * function by the parser in order to keep the structure simple
+	 * (rel_op is always a (char *) as it is the gcd between
+	 * strings and chars)
+	 *
+	 * those single-char ops do not have a dedicated MCOP enumerator
+	 * and use their own ASCII char value for oper
+	 */
+	else if (!strcmp(oper_s, "<"))
+		oper = '<';
+	else if (!strcmp(oper_s, ">"))
+		oper = '>';
+	/* if nothing matched */
 	else {
-		fprintf(stderr, "[A] Error: unknown binop '%s '\n", oper_s);
+		fprintf(stderr, "[A] Error: unknown binop '%s'\n", oper_s);
 		return NULL;
 	}
 
 	return ast_new_binop(oper, operand1, operand2);
+}
+
+struct ast_node *ast_new_unop(char affix, char *oper,
+		struct ast_node *operand)
+{
+	/*
+	 * affix can be
+	 * 0 = prefix operator
+	 * 1 = postfix operator
+	 * nothing else
+	 */
+
+	/* therefore check boundaries */
+	if (!(affix == 0 || affix == 1))
+		return NULL;
+
+	INIT_NODE(ast_node, ANT_UNDEFINED);
+
+	if (!(strcmp(oper, "++"))) {
+		node->type = affix == 0 ? ANT_PREINC : ANT_POSTINC;
+	} else if (!(strcmp(oper, "--"))) {
+		node->type = affix == 0 ? ANT_PREDEC : ANT_POSTDEC;
+	} else if (!(strcmp(oper, "-"))) {
+		node->type = ANT_NEGSIGN;
+	}
+
+	if (node->type == ANT_UNDEFINED) {
+		fprintf(stderr, "[A] Warning: UNDEF UNOP '%s'\n", oper);
+	}
+
+	node->child = operand;
+
+	return (struct ast_node *)node;
 }
 
 struct ast_node *ast_new_sig(struct ast_node *name)
@@ -211,6 +261,19 @@ struct ast_node *ast_new_sig(struct ast_node *name)
 	INIT_NODE(ast_node, ANT_SIG);
 
 	node->child = name;
+
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_sigvar(struct ast_node *identifier,
+		struct ast_node *type)
+{
+	INIT_NODE(ast_node, ANT_SIGVAR);
+
+	node->child = identifier;
+
+	if (type != NULL)
+		node->child->sibling = type;
 
 	return (struct ast_node *)node;
 }
@@ -263,6 +326,19 @@ struct ast_node *ast_new_tfact(struct ast_node *subj,
 	node->child = rel;
 	node->child->sibling = subj;
 	node->child->sibling->sibling = obj;
+
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_vardecl(struct ast_node *sigvar,
+		struct ast_node *val)
+{
+	INIT_NODE(ast_node, ANT_VARDECL);
+
+	node->child = sigvar;
+
+	if (val != NULL)
+		node->child->sibling = val;
 
 	return (struct ast_node *)node;
 }
