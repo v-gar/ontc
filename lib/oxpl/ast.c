@@ -19,6 +19,8 @@
 
 #include "ast.h"
 
+static void ast_free_str(struct ast_node_str *node);
+
 /**
  * Helper macro for initializing a node,
  * i.e. allocating the struct (which can be arbitrarily passed to
@@ -87,8 +89,7 @@ struct ast_node *ast_new_str(char *value)
 {
 	INIT_NODE(ast_node_str, ANT_STR);
 
-	node->value = malloc(strlen(value) + 1);
-	strcpy(node->value, value);
+	node->value = value;
 
 	return (struct ast_node *)node;
 }
@@ -548,4 +549,24 @@ int ast_validate(struct ast_node *root)
 	}
 
 	return 0;
+}
+
+void ast_free(struct ast_node *root)
+{
+	if (root == NULL)
+		return;
+
+	ast_free(root->child);
+	ast_free(root->sibling);
+
+	if (root->type == ANT_STR) {
+		ast_free_str((struct ast_node_str *)root);
+	}
+
+	free(root);
+}
+
+static void ast_free_str(struct ast_node_str *node)
+{
+	free(node->value);
 }

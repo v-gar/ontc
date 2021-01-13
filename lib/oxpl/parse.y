@@ -392,17 +392,17 @@ and_expr:
 /* Equality expressions */
 eq_expr:
   rel_expr
-| eq_expr EQ_OP rel_expr { $$ = ast_new_binop_s($2, $1, $3); }
+| eq_expr EQ_OP rel_expr { $$ = ast_new_binop_s($2, $1, $3); free($2); }
 ;
 
 rel_expr:
   shift_expr
-| rel_expr rel_op shift_expr { $$ = ast_new_binop_s($2, $1, $3); }
+| rel_expr rel_op shift_expr { $$ = ast_new_binop_s($2, $1, $3); free($2); }
 ;
 
 shift_expr:
   add_expr
-| shift_expr SHIFT_OP add_expr { $$ = ast_new_binop_s($2, $1, $3); }
+| shift_expr SHIFT_OP add_expr { $$ = ast_new_binop_s($2, $1, $3); free($2); }
 ;
 
 /* Arithmetic */

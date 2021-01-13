@@ -580,6 +580,13 @@ struct ast_node *ast_scope_add(struct ast_node *node,
  */
 int ast_validate(struct ast_node *root);
 
+/**
+ * Free the AST.
+ *
+ * \param root ::ANT_TRANSUNIT node
+ */
+void ast_free(struct ast_node *root);
+
 /* debugging tools */
 /**
  * Print AST for debugging purposes to stdout.

@@ -29,6 +29,7 @@
 extern struct ast_node *parse_ast;
 extern FILE *yyin;
 extern int yyparse();
+extern int yylex_destroy();
 
 static int execute(struct ast_node *root, struct ontology_database *kb);
 static int execute_function(struct ast_node *fn_node,
@@ -56,6 +57,8 @@ int exec_program(FILE *fp)
 
 	/* clean up */
 	ontology_free_database(kb);
+	ast_free(parse_ast);
+	yylex_destroy();
 
 	return 0;
 }
@@ -117,6 +120,8 @@ static int execute_function(struct ast_node *fn_node,
 	if (ontology_check_fact(kb, fact) == 0) {
 		printf("OXPL rocks!\n");
 	}
+
+	ontology_free_fact(fact);
 
 	rel = ontology_find_resource(kb, "isPreceededBy");
 	struct sl_list_node *qres = ontology_query_triple(kb,
