@@ -35,24 +35,24 @@ build/ontc : $(SRCS) build/libontg.a build/liboxpl.a
 
 # OXPL
 
-$(OXPLBUILDDIR)/lex.yy.c : lib/oxpl/lex.l $(OXPLBISONH) $(OXPLBUILDDIR)
+$(OXPLBUILDDIR)/lex.yy.c : lib/oxpl/lex.l $(OXPLBISONH) | $(OXPLBUILDDIR)
 	$(FLEX) -o $@ $<
 
-$(OXPLBISONP) $(OXPLBISONH) : lib/oxpl/parse.y $(OXPLBUILDDIR)
+$(OXPLBISONP) $(OXPLBISONH) : lib/oxpl/parse.y | $(OXPLBUILDDIR)
 	$(BISON) -o $@ --defines=$(OXPLBUILDDIR)/parse.tab.h $<
 
-$(OXPLBUILDDIR)/%.o : lib/oxpl/%.c $(OXPLBISONP) $(OXPLBISONH) $(OXPLBUILDDIR)
+$(OXPLBUILDDIR)/%.o : lib/oxpl/%.c $(OXPLBISONP) $(OXPLBISONH) | $(OXPLBUILDDIR)
 	$(CC) $(CCFLAGS) -I$(OXPLINCDIR) -I$(OXPLLIBDIR) -c -o $@ $<
 
-$(OXPLBUILDDIR)/%.yy.o : $(OXPLBUILDDIR)/%.yy.c  $(OXPLBUILDDIR)
+$(OXPLBUILDDIR)/%.yy.o : $(OXPLBUILDDIR)/%.yy.c | $(OXPLBUILDDIR)
 	$(CC) $(CCFLAGS) -I$(OXPLINCDIR) -I$(OXPLLIBDIR) -c -o $@ $<
 
-$(OXPLBUILDDIR)/%.tab.o : $(OXPLBUILDDIR)/%.tab.c  $(OXPLBUILDDIR)
+$(OXPLBUILDDIR)/%.tab.o : $(OXPLBUILDDIR)/%.tab.c | $(OXPLBUILDDIR)
 	$(CC) $(CCFLAGS) -I$(OXPLINCDIR) -I$(OXPLLIBDIR) -c -o $@ $<
 
 # ONTG
 
-$(ONTGBUILDDIR)/%.o : $(ONTGLIBDIR)/%.c $(ONTGBUILDDIR)
+$(ONTGBUILDDIR)/%.o : $(ONTGLIBDIR)/%.c | $(ONTGBUILDDIR)
 	$(CC) $(CCFLAGS) -I$(ONTGINCDIR) -I$(ONTGLIBDIR) -c -o $@ $<
 
 # LIBS
