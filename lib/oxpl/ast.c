@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "ast.h"
 
@@ -114,6 +115,54 @@ struct ast_node *ast_new_scope(struct ast_node *value)
 	node->child = value;
 
 	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_cmpd(struct ast_node *head)
+{
+	INIT_NODE(ast_node, ANT_CMPD);
+
+	if (head == NULL) {
+		fprintf(stderr, "Error: empty head\n");
+		free(node);
+		return NULL;
+	}
+
+	node->child = head;
+
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_convert_cmpd_seq(struct ast_node *const cmpd_node)
+{
+	if (cmpd_node == NULL) {
+		/*
+		 * This case occurs if the compound is already empty,
+		 * i.e. if the compound statement is empty.
+		 */
+		return NULL;
+	}
+
+	if (cmpd_node->type != ANT_CMPD) {
+		fprintf(stderr, "Error: cmpd_node has not type ANT_CMPD,"
+				" it has %d\n", cmpd_node->type);
+		return NULL;
+		/*
+		 * returning cmpd_node would be another option but this
+		 * would have catastrophic influence on the following phases
+		 * as other following stages need to handle this case.
+		 *
+		 * Now, they just need to cope with the NULL case.
+		 */
+	}
+
+	cmpd_node->type = ANT_SEQ;
+
+	/**
+	 * In order to improve performance, children of nodes are not
+	 * checked (if NULL, etc.)
+	 */
+
+	return (struct ast_node *)cmpd_node;
 }
 
 struct ast_node *ast_new_call(struct ast_node *callee,
@@ -293,7 +342,7 @@ struct ast_node *ast_new_func(struct ast_node *sig,
 struct ast_node *ast_new_address(struct ast_node *scope,
 		struct ast_node *param)
 {
-	INIT_NODE(ast_node, ANT_ADDRESS);
+	INIT_NODE(ast_node, ANT_ADDR);
 
 	node->child = scope;
 
@@ -340,6 +389,31 @@ struct ast_node *ast_new_vardecl(struct ast_node *sigvar,
 
 	if (val != NULL)
 		node->child->sibling = val;
+
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_class(struct ast_node *identifier,
+		struct ast_node *spec)
+{
+	INIT_NODE(ast_node, ANT_CLASS);
+
+	assert(identifier->type == ANT_STR);
+	assert(spec == NULL || spec->type == ANT_CSPEC);
+
+	node->child = identifier;
+	node->child->sibling = spec; /* NULL if no body */
+
+	/* TODO: implement instance class type */
+
+	return (struct ast_node *)node;
+}
+
+struct ast_node *ast_new_cspec(struct ast_node *head)
+{
+	INIT_NODE(ast_node, ANT_CSPEC);
+
+	node->child = head;
 
 	return (struct ast_node *)node;
 }

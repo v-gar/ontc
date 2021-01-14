@@ -70,6 +70,35 @@ enum ast_node_type {
 	ANT_SCOPE,
 
 	/**
+	 * Sequence node.
+	 * Contains one or more children to be executed in their
+	 * order.
+	 *
+	 * Sequence nodes have the same structure as ::ANT_CMPD
+	 * nodes and are only created via a conversion from
+	 * an ::ANT_CMPD node via ::ast_convert_cmpd_seq().
+	 *
+	 * Sequence nodes occur as a child of ::ANT_FUNC,
+	 * ::ANT_WHILE, ::ANT_FOR, etc. when they act as
+	 * the body of that element (e.g. in a for loop).
+	 *
+	 * Sequence nodes DO NOT occur as sub-blocks in
+	 * statements - this is the sole purpose of ::ANT_CMPD.
+	 */
+	ANT_SEQ,
+
+	/**
+	 * Compound statement node.
+	 * Contains one or more children to be executed in their
+	 * order.
+	 *
+	 * Compound nodes occur in imperative blocks and have
+	 * their own scope (for variables, not to be confused
+	 * ::ANT_SCOPE which is part of an ::ANT_ADDR)
+	 */
+	ANT_CMPD,
+
+	/**
 	 * Address node.
 	 *
 	 * An address node is an extended ::ANT_SCOPE
@@ -79,7 +108,7 @@ enum ast_node_type {
 	 * The left child points an ::ANT_SCOPE,
 	 * the right child to an ::ANT_STR.
 	 */
-	ANT_ADDRESS,
+	ANT_ADDR,
 
 	/**
 	 * Call node.
@@ -333,7 +362,23 @@ enum ast_node_type {
 	 * 1. variable siganture (::ANT_SIGVAR)
 	 * 2. value (optiona)
 	 */
-	ANT_VARDECL
+	ANT_VARDECL,
+
+	/**
+	 * Class node.
+	 *
+	 * 1. identifier (::ANT_STR)
+	 * 2. specification (::ANT_CSPEC)
+	 */
+	ANT_CLASS,
+
+	/**
+	 * Class specification node.
+	 *
+	 * This node contains all facts and functions
+	 * as its children.
+	 */
+	ANT_CSPEC
 };
 
 /**
@@ -415,6 +460,27 @@ struct ast_node *ast_new_str(char *value);
  */
 struct ast_node *ast_new_scope(struct ast_node *value);
 
+/**
+ * Create a new ::ANT_CMPD node and add the head element.
+ * More elements can be added using ::ast_add_seq().
+ *
+ * To create an ::ANT_SEQ node, create a ::ANT_CMPD node
+ * and then convert it using ::ast_convert_cmpd_seq().
+ */
+struct ast_node *ast_new_cmpd(struct ast_node *head);
+
+/**
+ * Converts an ::ANT_CMPD node to an ::ANT_SEQ node.
+ *
+ * For more information see ::ANT_SEQ.
+ *
+ * This is possible because they share their structure.
+ *
+ * \param cmpd_node AST node with type ::ANT_CMPD or NULL
+ *                  (if compound statement is empty)
+ * \result AST node with type ::ANT_SEQ or NULL
+ */
+struct ast_node *ast_convert_cmpd_seq(struct ast_node *const cmpd_node);
 
 /**
  * Add new ::ANT_CALL node.
@@ -553,6 +619,19 @@ struct ast_node *ast_new_for(struct ast_node *identifier,
  */
 struct ast_node *ast_new_vardecl(struct ast_node *sigvar,
 		struct ast_node *val);
+
+/**
+ * Create new class node (::ANT_CLASS)
+ */
+struct ast_node *ast_new_class(struct ast_node *identifier,
+		struct ast_node *spec);
+
+/**
+ * Create new class specification node (::ANT_CSPEC).
+ * An ::ANT_CSPEC is a sequential list so it will be
+ * populated using ::ast_add_seq.
+ */
+struct ast_node *ast_new_cspec(struct ast_node *head);
 
 /**
  * Create new translation unit node (::ANT_TRANSUNIT).

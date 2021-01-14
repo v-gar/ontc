@@ -101,11 +101,12 @@
 		and_expr exclusive_or_expr inclusive_or_expr
 		logical_and_expr logical_or_expr
 		conditional_expr assign_expr expr expr_stmt
-		imper_stmt imper_block imper_block_stmt imper_decl
+		imper_stmt cmpd_stmt cmpd_stmt_list imper_decl
 		fol_stmt triple_stmt triple_subj triple_obj
 		slct_stmt slct_conditional jump_stmt iter_stmt
 		arglist arglist_args sig_var
 		fact decl
+		class_sel class_spec class_spec_list
 		sig func callarglist addr
 		stmt tunit start
 
@@ -127,7 +128,7 @@ stmt:
 
 /* Imperative block statement */
 imper_stmt:
-  imper_block
+  cmpd_stmt
 | expr_stmt
 | iter_stmt
 | slct_stmt
@@ -142,12 +143,19 @@ expr_stmt:
 
 /* Conditional / select statements */
 slct_stmt:
-  IF slct_conditional imper_block { $$ = ast_new_cond($2, $3, NULL); }
-| IF slct_conditional imper_block ELSE imper_block {
-	$$ = ast_new_cond($2, $3, $5);
+  IF slct_conditional cmpd_stmt {
+	/* simple if-then */
+	$$ = ast_new_cond($2, ast_convert_cmpd_seq($3), NULL);
 }
-| IF slct_conditional imper_block ELSE slct_stmt {
-	$$ = ast_new_cond($2, $3, $5);
+| IF slct_conditional cmpd_stmt ELSE cmpd_stmt {
+	/* if-then-else */
+	$$ = ast_new_cond($2,
+		ast_convert_cmpd_seq($3),
+		ast_convert_cmpd_seq($5));
+}
+| IF slct_conditional cmpd_stmt ELSE slct_stmt {
+	/* if-then-elif */
+	$$ = ast_new_cond($2, ast_convert_cmpd_seq($3), $5);
 }
 ;
 
@@ -157,9 +165,11 @@ slct_conditional:
 
 /* Loops */
 iter_stmt:
-  WHILE conditional_expr imper_block { $$ = ast_new_while($2, $3); }
-| FOR IDENTIFIER IN expr imper_block {
-	$$ = ast_new_for(ast_new_str($2), $4, $5);
+  WHILE conditional_expr cmpd_stmt {
+	$$ = ast_new_while($2, ast_convert_cmpd_seq($3));
+}
+| FOR IDENTIFIER IN expr cmpd_stmt {
+	$$ = ast_new_for(ast_new_str($2), $4, ast_convert_cmpd_seq($5));
 }
 ;
 
@@ -203,8 +213,8 @@ addr_props:
 
 decl:
   fact
-| class_sel class_decl_block { /* TODO */ $$ = NULL; }
-| class_sel ';' { /* TODO */ $$ = NULL; }
+| class_sel class_spec { $$ = ast_new_class($1, $2); }
+| class_sel ';' { $$ = ast_new_class($1, NULL); }
 ;
 
 imper_decl:
@@ -216,19 +226,24 @@ imper_decl:
 
 /* Class selector */
 class_sel:
-  CLS_SEL_TYPE IDENTIFIER
+  CLS_SEL_TYPE IDENTIFIER {
+	/* TODO: implement instance class type */
+	/* at the moment the class_sel only represents
+	the identifier and therefore is an ANT_STR */
+	$$ = ast_new_str($2);
+}
 ;
 
-class_decl_block:
-  '{' class_decl_block_stmt '}'
-| '{' '}'
+class_spec:
+  '{' class_spec_list '}' { $$ = ast_new_cspec($2); }
+| '{' '}' { $$ = NULL; }
 ;
 
-class_decl_block_stmt:
+class_spec_list:
   func
 | fact
-| class_decl_block_stmt func
-| class_decl_block_stmt fact
+| class_spec_list func { $$ = ast_add_seq($1, $2); }
+| class_spec_list fact { $$ = ast_add_seq($1, $2); }
 ;
 
 /* == Ontology == */
@@ -278,7 +293,7 @@ triple_obj:
 
 /* Basic function rule */
 func:
-  sig imper_block { $$ = ast_new_func($1, $2); }
+  sig cmpd_stmt { $$ = ast_new_func($1, ast_convert_cmpd_seq($2)); }
 | sig ';'
 ;
 
@@ -323,17 +338,17 @@ arglist_args:
 | arglist_args ',' addr { $$ = ast_add_seq($1, $3); }
 ;
 
-/* == Blocks == */
-imper_block:
-  '{' imper_block_stmt '}' { $$ = $2; }
-| '{' '}' { $$ = NULL; }
+/* == Compound Statement == */
+cmpd_stmt:
+  '{' cmpd_stmt_list '}' { $$ = ast_new_cmpd($2); }
+| '{' '}' { $$ = NULL; /* There are no ::ANT_CMPD nodes without a head */ }
 ;
 
-imper_block_stmt:
+cmpd_stmt_list:
   imper_stmt
 | imper_decl
-| imper_block_stmt imper_stmt { $$ = ast_add_seq($1, $2); }
-| imper_block_stmt imper_decl { $$ = ast_add_seq($1, $2); }
+| cmpd_stmt_list imper_stmt { $$ = ast_add_seq($1, $2); }
+| cmpd_stmt_list imper_decl { $$ = ast_add_seq($1, $2); }
 ;
 
 /*
