@@ -132,7 +132,9 @@ static int execute_function(struct ast_node *fn_node,
 
 		execute_function(get_fn(root, prec_fn->name), kb, root);
 
+		struct sl_list_node *tmp = qres;
 		qres = qres->next;
+		free(tmp);
 	}
 	/* end of ontology proof of concept */
 

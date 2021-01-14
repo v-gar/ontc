@@ -24,7 +24,13 @@
 
 void print_help(void)
 {
-	printf("ontc - ontology toolchain\n");
+	char text[] = "ontc - ontology toolchain\n\n"
+		"Available commands:\n"
+		"shell\tOpen an interactive KB shell\n"
+		"run\tRun an OXPL program\n"
+		"dbgon\tDebug ontology of an OXPL program"
+		" using interactive KB shell\n";
+	printf("%s", text);
 }
 
 void start_interpreter(char *filename)

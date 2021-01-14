@@ -92,7 +92,13 @@ static struct shell_return_value prompt(struct ontology_database **db)
 	char line[20];
 
 	printf("> ");
-	fgets(line, sizeof(line), stdin);
+	char *s = fgets(line, sizeof(line), stdin);
+
+	if (s == NULL) /* EOF */
+		return (struct shell_return_value){
+			NULL,
+			SHELL_RETURN_FLAG_EXIT
+		};
 
 	return evaluate(line, db);
 }
