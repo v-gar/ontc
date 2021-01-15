@@ -20,25 +20,8 @@
 
 #include "ast.h"
 
+static struct ast_node *alloc_node(enum ast_node_type const type);
 static void ast_free_str(struct ast_node_str *node);
-
-/**
- * Helper macro for initializing a node,
- * i.e. allocating the struct (which can be arbitrarily passed to
- * via strct), check whether the allocation was successful,
- * initialize the node common pointers to NULL and set the type
- * to the value ant.
- */
-#define INIT_NODE(strct, ant) \
-	struct strct *node = malloc(sizeof(struct strct)); \
-	if (!node) { \
-		fprintf(stderr, "Can't create "#strct": out of memory\n"); \
-		return NULL;\
-	} \
-	node->child = NULL; \
-	node->sibling = NULL; \
-	node->type = ant;
-
 
 /**
  * Set the type for a binary operation node in the switch-statement.
@@ -68,9 +51,47 @@ enum multicharacter_operator {
 	MCOP_SHIFTR = 27
 };
 
+static struct ast_node *init_node(enum ast_node_type const type)
+{
+	size_t size;
+
+	switch (type) {
+		case ANT_INT:
+			size = sizeof(struct ast_node_int);
+			break;
+
+		case ANT_FLOAT:
+			size = sizeof(struct ast_node_float);
+			break;
+
+		case ANT_STR:
+			size = sizeof(struct ast_node_str);
+			break;
+
+		default:
+			size = sizeof(struct ast_node);
+	}
+
+	struct ast_node *node = malloc(size);
+
+	if (!node) {
+		fprintf(stderr, "Can't create node struct: out of memory\n");
+		return NULL;
+	}
+
+	node->child = NULL;
+	node->sibling = NULL;
+	node->type = type;
+
+	return node;
+}
+
 struct ast_node *ast_new_int(int value)
 {
-	INIT_NODE(ast_node_int, ANT_INT);
+	struct ast_node_int *node = (struct ast_node_int *)init_node(ANT_INT);
+
+	if (node == NULL)
+		return NULL;
 
 	node->value = value;
 
@@ -79,7 +100,10 @@ struct ast_node *ast_new_int(int value)
 
 struct ast_node *ast_new_float(float value)
 {
-	INIT_NODE(ast_node_float, ANT_FLOAT);
+	struct ast_node_float *node = (struct ast_node_float *)init_node(ANT_FLOAT);
+
+	if (node == NULL)
+		return NULL;
 
 	node->value = value;
 
@@ -88,7 +112,10 @@ struct ast_node *ast_new_float(float value)
 
 struct ast_node *ast_new_str(char *value)
 {
-	INIT_NODE(ast_node_str, ANT_STR);
+	struct ast_node_str *node = (struct ast_node_str *)init_node(ANT_STR);
+
+	if (node == NULL)
+		return NULL;
 
 	node->value = value;
 
@@ -97,7 +124,10 @@ struct ast_node *ast_new_str(char *value)
 
 struct ast_node *ast_new_scope(struct ast_node *value)
 {
-	INIT_NODE(ast_node, ANT_SCOPE);
+	struct ast_node *node = init_node(ANT_SCOPE);
+
+	if (node == NULL)
+		return NULL;
 
 	if (value == NULL) {
 		fprintf(stderr, "Error: empty scope\n");
@@ -114,12 +144,15 @@ struct ast_node *ast_new_scope(struct ast_node *value)
 
 	node->child = value;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_cmpd(struct ast_node *head)
 {
-	INIT_NODE(ast_node, ANT_CMPD);
+	struct ast_node *node = init_node(ANT_CMPD);
+
+	if (node == NULL)
+		return NULL;
 
 	if (head == NULL) {
 		fprintf(stderr, "Error: empty head\n");
@@ -129,7 +162,7 @@ struct ast_node *ast_new_cmpd(struct ast_node *head)
 
 	node->child = head;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_convert_cmpd_seq(struct ast_node *const cmpd_node)
@@ -162,26 +195,32 @@ struct ast_node *ast_convert_cmpd_seq(struct ast_node *const cmpd_node)
 	 * checked (if NULL, etc.)
 	 */
 
-	return (struct ast_node *)cmpd_node;
+	return cmpd_node;
 }
 
 struct ast_node *ast_new_call(struct ast_node *callee,
 		struct ast_node *arglist)
 {
-	INIT_NODE(ast_node, ANT_CALL);
+	struct ast_node *node = init_node(ANT_CALL);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = callee;
 
 	if (arglist != NULL)
 		node->child->sibling = arglist;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_binop(char oper, struct ast_node *operand1,
 		struct ast_node *operand2)
 {
-	INIT_NODE(ast_node, ANT_UNDEFINED);
+	struct ast_node *node = init_node(ANT_UNDEFINED);
+
+	if (node == NULL)
+		return NULL;
 
 	switch (oper) {
 		/* arithmetic operations */
@@ -221,7 +260,7 @@ struct ast_node *ast_new_binop(char oper, struct ast_node *operand1,
 	node->child = operand1;
 	node->child->sibling = operand2;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_binop_s(char *oper_s, struct ast_node *operand1,
@@ -287,7 +326,10 @@ struct ast_node *ast_new_unop(char affix, char *oper,
 	if (!(affix == 0 || affix == 1))
 		return NULL;
 
-	INIT_NODE(ast_node, ANT_UNDEFINED);
+	struct ast_node *node = init_node(ANT_UNDEFINED);
+
+	if (node == NULL)
+		return NULL;
 
 	if (!(strcmp(oper, "++"))) {
 		node->type = affix == 0 ? ANT_PREINC : ANT_POSTINC;
@@ -303,70 +345,88 @@ struct ast_node *ast_new_unop(char affix, char *oper,
 
 	node->child = operand;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_sig(struct ast_node *name)
 {
-	INIT_NODE(ast_node, ANT_SIG);
+	struct ast_node *node = init_node(ANT_SIG);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = name;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_sigvar(struct ast_node *identifier,
 		struct ast_node *type)
 {
-	INIT_NODE(ast_node, ANT_SIGVAR);
+	struct ast_node *node = init_node(ANT_SIGVAR);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = identifier;
 
 	if (type != NULL)
 		node->child->sibling = type;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_func(struct ast_node *sig,
 		struct ast_node *block)
 {
-	INIT_NODE(ast_node, ANT_FUNC);
+	struct ast_node *node = init_node(ANT_FUNC);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = sig;
 	node->child->sibling = block;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_address(struct ast_node *scope,
 		struct ast_node *param)
 {
-	INIT_NODE(ast_node, ANT_ADDR);
+	struct ast_node *node = init_node(ANT_ADDR);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = scope;
 
 	if (param != NULL)
 		node->child->sibling = param;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_fact(struct ast_node *rel,
 		struct ast_node *args)
 {
-	INIT_NODE(ast_node, ANT_FACT);
+	struct ast_node *node = init_node(ANT_FACT);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = rel;
 	node->child->sibling = args;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_tfact(struct ast_node *subj,
 		struct ast_node *rel, struct ast_node *obj)
 {
-	INIT_NODE(ast_node, ANT_TFACT);
+	struct ast_node *node = init_node(ANT_TFACT);
+
+	if (node == NULL)
+		return NULL;
 
 	if (rel == NULL) {
 		fprintf(stderr, "[A] Error: fact rel is NULL\n");
@@ -377,26 +437,32 @@ struct ast_node *ast_new_tfact(struct ast_node *subj,
 	node->child->sibling = subj;
 	node->child->sibling->sibling = obj;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_vardecl(struct ast_node *sigvar,
 		struct ast_node *val)
 {
-	INIT_NODE(ast_node, ANT_VARDECL);
+	struct ast_node *node = init_node(ANT_VARDECL);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = sigvar;
 
 	if (val != NULL)
 		node->child->sibling = val;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_class(struct ast_node *identifier,
 		struct ast_node *spec)
 {
-	INIT_NODE(ast_node, ANT_CLASS);
+	struct ast_node *node = init_node(ANT_CLASS);
+
+	if (node == NULL)
+		return NULL;
 
 	assert(identifier->type == ANT_STR);
 	assert(spec == NULL || spec->type == ANT_CSPEC);
@@ -406,37 +472,46 @@ struct ast_node *ast_new_class(struct ast_node *identifier,
 
 	/* TODO: implement instance class type */
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_cspec(struct ast_node *head)
 {
-	INIT_NODE(ast_node, ANT_CSPEC);
+	struct ast_node *node = init_node(ANT_CSPEC);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = head;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_transunit(struct ast_node *first)
 {
-	INIT_NODE(ast_node, ANT_TRANSUNIT);
+	struct ast_node *node = init_node(ANT_TRANSUNIT);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = first;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_cond(struct ast_node *cond,
 		struct ast_node *then, struct ast_node *else_)
 {
-	INIT_NODE(ast_node, ANT_COND);
+	struct ast_node *node = init_node(ANT_COND);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = cond;
 	node->child->sibling = then; /* TODO: introduce ANT_SEQ */
 	node->child->sibling->sibling = else_;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_ctern(struct ast_node *cond,
@@ -449,23 +524,29 @@ struct ast_node *ast_new_ctern(struct ast_node *cond,
 	 * as ANT_COND has then/else-blocks and ANT_CTERN
 	 * has then/else-expressions.
 	 */
-	INIT_NODE(ast_node, ANT_CTERN);
+	struct ast_node *node = init_node(ANT_CTERN);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = cond;
 	node->child->sibling = then;
 	node->child->sibling->sibling = else_;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_ret(struct ast_node *expr)
 {
-	INIT_NODE(ast_node, ANT_RET);
+	struct ast_node *node = init_node(ANT_RET);
+
+	if (node == NULL)
+		return NULL;
 
 	if (expr != NULL)
 		node->child = expr;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_jump(char type)
@@ -478,32 +559,37 @@ struct ast_node *ast_new_jump(char type)
 		default: return NULL;
 	}
 
-	INIT_NODE(ast_node, ast_type);
-	return (struct ast_node *)node;
+	return init_node(ast_type);
 }
 
 struct ast_node *ast_new_while(struct ast_node *condition,
 		struct ast_node *block)
 {
-	INIT_NODE(ast_node, ANT_WHILE);
+	struct ast_node *node = init_node(ANT_WHILE);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = condition;
 	node->child->sibling = block;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_for(struct ast_node *identifier,
 		struct ast_node *iterable,
 		struct ast_node *block)
 {
-	INIT_NODE(ast_node, ANT_FOR);
+	struct ast_node *node = init_node(ANT_FOR);
+
+	if (node == NULL)
+		return NULL;
 
 	node->child = identifier;
 	node->child->sibling = iterable;
 	node->child->sibling->sibling = block;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_add_seq(struct ast_node *node,
