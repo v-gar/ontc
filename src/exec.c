@@ -109,7 +109,8 @@ static int execute_function(struct ast_node *fn_node,
 	cur = fn_node->child; /* signature (no handler implemented yet) */
 
 	/* ontology proof of concept */
-	char *name = ((struct ast_node_str *)cur->child)->value;
+	struct ast_node_str *name_str_node_val = cur->child->value;
+	char *name = name_str_node_val->value;
 
 	struct ontology_resource *rel = ontology_find_resource(kb,
 			"printsATestMessageWhenCalled");
@@ -168,7 +169,8 @@ static int execute_call(struct ast_node *call_node)
 			&& call_expr->child->type == ANT_STR
 			&& call_expr->child->sibling == NULL) /* one level */
 	{
-		char *name = ((struct ast_node_str *)call_expr->child)->value;
+		struct ast_node_str *node_val = call_expr->child->value;
+		char *name = node_val->value;
 
 		if (strcmp("print", name) == 0) {
 			lang_builtin_fn_print(args);
@@ -202,7 +204,8 @@ static struct ast_node *get_fn(struct ast_node *ast, char *name)
 			continue;
 
 		/* ... and the identifier is a string ... */
-		if (strcmp(((struct ast_node_str *)ident)->value, name) == 0)
+		struct ast_node_str *ident_str_node_val = ident->value;
+		if (strcmp(ident_str_node_val->value, name) == 0)
 			return cur;
 	} while (NULL != (cur = cur->sibling));
 
@@ -220,8 +223,9 @@ static void collect_facts(struct ast_node *root, struct ontology_database *kb)
 		if (cur->type != ANT_FUNC)
 			continue;
 
-		char *name = ((struct ast_node_str *)cur->child->child)
-			->value;
+		struct ast_node *str_node = cur->child->child;
+		struct ast_node_str *str_node_val = str_node->value;
+		char *name = str_node_val->value;
 
 		char *resname = malloc(strlen(name) + 1);
 		strcpy(resname, name);
@@ -237,19 +241,24 @@ static void collect_facts(struct ast_node *root, struct ontology_database *kb)
 		if (cur->type != ANT_TFACT)
 			continue;
 
-		struct ast_node *rel = cur->child;
-		struct ast_node *sbj = rel->sibling;
-		struct ast_node *obj = sbj->sibling;
+		struct ast_node *rel = cur->child; /* ANT_SCOPE */
+		struct ast_node *sbj = rel->sibling; /* ANT_ADDR */
+		struct ast_node *obj = sbj->sibling; /* ANT_SCOPE */
 
 		char *relname, *sbjname, *objname = NULL;
 
-		relname = ((struct ast_node_str *)rel->child)->value;
-		sbjname = ((struct ast_node_str *)sbj->child->child)
+		struct ast_node_str *rel_str_node_val = rel->child->value;
+		struct ast_node_str *sbj_str_node_val = sbj->child->child
 			->value;
 
-		if (obj != NULL)
-			objname = ((struct ast_node_str *)obj->child->child)
-				->value;
+		relname = rel_str_node_val->value;
+		sbjname = sbj_str_node_val->value;
+
+		if (obj != NULL) {
+			struct ast_node_str *obj_str_node_val = obj->child
+				->child->value;
+			objname = obj_str_node_val->value;
+		}
 
 		struct ontology_resource *relres = ontology_find_resource(
 				kb, relname);

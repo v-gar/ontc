@@ -20,8 +20,10 @@
 
 #include "ast.h"
 
-static struct ast_node *alloc_node(enum ast_node_type const type);
-static void ast_free_str(struct ast_node_str *node);
+static struct ast_node *init_node(enum ast_node_type const type);
+static struct ast_node_int *init_node_int(void);
+static struct ast_node_float *init_node_float(void);
+static struct ast_node_str *init_node_str(void);
 
 /**
  * Set the type for a binary operation node in the switch-statement.
@@ -53,29 +55,10 @@ enum multicharacter_operator {
 
 static struct ast_node *init_node(enum ast_node_type const type)
 {
-	size_t size;
-
-	switch (type) {
-		case ANT_INT:
-			size = sizeof(struct ast_node_int);
-			break;
-
-		case ANT_FLOAT:
-			size = sizeof(struct ast_node_float);
-			break;
-
-		case ANT_STR:
-			size = sizeof(struct ast_node_str);
-			break;
-
-		default:
-			size = sizeof(struct ast_node);
-	}
-
-	struct ast_node *node = malloc(size);
+	struct ast_node *node = malloc(sizeof(struct ast_node));
 
 	if (!node) {
-		fprintf(stderr, "Can't create node struct: out of memory\n");
+		perror("Can't create node struct: out of memory");
 		return NULL;
 	}
 
@@ -83,41 +66,103 @@ static struct ast_node *init_node(enum ast_node_type const type)
 	node->sibling = NULL;
 	node->type = type;
 
+	switch (type) {
+		case ANT_INT:
+			node->value = init_node_int();
+			break;
+
+		case ANT_FLOAT:
+			node->value = init_node_float();
+			break;
+
+		case ANT_STR:
+			node->value = init_node_str();
+			break;
+
+		default:
+			node->value = NULL;
+	}
+
+	return node;
+}
+
+static struct ast_node_int *init_node_int(void)
+{
+	struct ast_node_int *node = malloc(sizeof(struct ast_node_int));
+
+	if (!node) {
+		perror("Can't create node struct: out of memory");
+		return NULL;
+	}
+
+	node->value = 0;
+
+	return node;
+}
+
+static struct ast_node_float *init_node_float(void)
+{
+	struct ast_node_float *node = malloc(sizeof(struct ast_node_float));
+
+	if (!node) {
+		perror("Can't create node struct: out of memory");
+		return NULL;
+	}
+
+	node->value = 0.f;
+
+	return node;
+}
+
+static struct ast_node_str *init_node_str(void)
+{
+	struct ast_node_str *node = malloc(sizeof(struct ast_node_str));
+
+	if (!node) {
+		perror("Can't create node struct: out of memory");
+		return NULL;
+	}
+
+	node->value = NULL;
+
 	return node;
 }
 
 struct ast_node *ast_new_int(int value)
 {
-	struct ast_node_int *node = (struct ast_node_int *)init_node(ANT_INT);
+	struct ast_node *node = init_node(ANT_INT);
+	struct ast_node_int *node_val = node->value;
 
 	if (node == NULL)
 		return NULL;
 
-	node->value = value;
+	node_val->value = value;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_float(float value)
 {
-	struct ast_node_float *node = (struct ast_node_float *)init_node(ANT_FLOAT);
+	struct ast_node *node = init_node(ANT_FLOAT);
+	struct ast_node_float *node_val = node->value;
 
 	if (node == NULL)
 		return NULL;
 
-	node->value = value;
+	node_val->value = value;
 
-	return (struct ast_node *)node;
+	return node;
 }
 
 struct ast_node *ast_new_str(char *value)
 {
-	struct ast_node_str *node = (struct ast_node_str *)init_node(ANT_STR);
+	struct ast_node *node = init_node(ANT_STR);
+	struct ast_node_str *node_val = node->value;
 
 	if (node == NULL)
 		return NULL;
 
-	node->value = value;
+	node_val->value = value;
 
 	return (struct ast_node *)node;
 }
@@ -385,6 +430,8 @@ struct ast_node *ast_new_func(struct ast_node *sig,
 		return NULL;
 
 	node->child = sig;
+
+	/* block is NULL if node is declaration only */
 	node->child->sibling = block;
 
 	return node;
@@ -637,11 +684,15 @@ void ast_print(struct ast_node *root)
 
 	printf("Node type: %d\n", root->type);
 
-	if (root->type == ANT_STR)
-		printf("String: %s\n", ((struct ast_node_str *)root)->value);
+	if (root->type == ANT_STR) {
+		struct ast_node_str *node_val = root->value;
+		printf("String: %s\n", node_val->value);
+	}
 
-	if (root->type == ANT_INT)
-		printf("Int: %d\n", ((struct ast_node_int *)root)->value);
+	if (root->type == ANT_INT) {
+		struct ast_node_int *node_val = root->value;
+		printf("Int: %d\n", node_val->value);
+	}
 
 	printf("Child:\n");
 	ast_print(root->child);
@@ -690,9 +741,8 @@ int ast_validate(struct ast_node *root)
 			struct ast_node *ident = cur->child->child;
 			if (ident->type == ANT_STR) {
 				/* ... and the identifier is a string ... */
-				if (strcmp(
-					((struct ast_node_str *)ident)->value,
-					"main") == 0)
+				struct ast_node_str *node_val = ident->value;
+				if (strcmp(node_val->value, "main") == 0)
 					main_found = 1;
 			} else {
 				fprintf(stderr, "[A] Error: invalid fn sig\n");
@@ -719,14 +769,21 @@ void ast_free(struct ast_node *root)
 	ast_free(root->child);
 	ast_free(root->sibling);
 
-	if (root->type == ANT_STR) {
-		ast_free_str((struct ast_node_str *)root);
+	switch (root->type) {
+		case ANT_STR: {
+			struct ast_node_str *valnode = root->value;
+			free(valnode->value);
+			free(valnode);
+			break;
+			      }
+		case ANT_INT:
+		case ANT_FLOAT:
+			      free(root->value);
+			      break;
+
+		default:
+			      break;
 	}
 
 	free(root);
-}
-
-static void ast_free_str(struct ast_node_str *node)
-{
-	free(node->value);
 }

@@ -404,38 +404,33 @@ struct ast_node {
 	 * Same level.
 	 */
 	struct ast_node *sibling;
+
+	/**
+	 * Pointer to value struct of the node.
+	 * value != NULL if type is ANT_INT, ANT_FLOAT,
+	 * ANT_STR, otherwise value == NULL.
+	 */
+	void *value;
 };
 
 /**
- * \brief Special node of the AST carrying an integer value.
+ * \brief Special value node of the AST carrying an integer value.
  */
 struct ast_node_int {
-	enum ast_node_type type;
-	struct ast_node *child;
-	struct ast_node *sibling;
-
 	int value;
 };
 
 /**
- * \brief Special node of the AST carrying a float value.
+ * \brief Special value node of the AST carrying a float value.
  */
 struct ast_node_float {
-	enum ast_node_type type;
-	struct ast_node *child;
-	struct ast_node *sibling;
-
 	float value;
 };
 
 /**
- * \brief Special node of the AST carrying a string.
+ * \brief Special value node of the AST carrying a string.
  */
 struct ast_node_str {
-	enum ast_node_type type;
-	struct ast_node *child;
-	struct ast_node *sibling;
-
 	char *value;
 };
 

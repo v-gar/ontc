@@ -33,7 +33,8 @@ void lang_builtin_fn_print(struct ast_node *args)
 		return;
 	}
 
-	char *print_str = ((struct ast_node_str *)args)->value;
+	struct ast_node_str *str_node_val = args->value;
+	char *print_str = str_node_val->value;
 
 	printf("%s", print_str);
 }
@@ -55,7 +56,8 @@ void lang_builtin_fn_println(struct ast_node *args)
 		return;
 	}
 
-	char *print_str = ((struct ast_node_str *)args)->value;
+	struct ast_node_str *str_node_val = args->value;
+	char *print_str = str_node_val->value;
 
 	printf("%s\n", print_str);
 }

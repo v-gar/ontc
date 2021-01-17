@@ -294,7 +294,7 @@ triple_obj:
 /* Basic function rule */
 func:
   sig cmpd_stmt { $$ = ast_new_func($1, ast_convert_cmpd_seq($2)); }
-| sig ';'
+| sig ';' { $$ = ast_new_func($1, NULL); }
 ;
 
 /* Function signature */
