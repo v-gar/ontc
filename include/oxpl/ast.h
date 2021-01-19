@@ -18,6 +18,22 @@
 
 #include <stddef.h>
 
+#define AST_NODE_SIBL(node) (node->base.sibling)
+#define AST_NODE_CHLD(node) (node->base.child)
+#define AST_NODE_TYPE(node) \
+	(node->base.type)
+
+#define AST_NODE_CHLD1(node) AST_NODE_CHLD(node)
+#define AST_NODE_CHLD2(node) AST_NODE_CHLD1(node)->base.sibling
+#define AST_NODE_CHLD3(node) AST_NODE_CHLD2(node)->base.sibling
+
+#define AST_NODE_NEXT_SIBL(cur) (cur = AST_NODE_SIBL(cur))
+#define AST_NODE_NEXT_CHLD(cur) (cur = AST_NODE_CHLD(cur))
+
+#define AST_NODE_CAST(dest, src, subtype) \
+	struct ast_node_ ## subtype *dest = \
+	 (struct ast_node_ ## subtype *) src
+
 /**
  * \brief Types of abstract syntax tree nodes
  */
@@ -382,12 +398,12 @@ enum ast_node_type {
 };
 
 /**
- * \brief Basic node of the abstract syntax tree (AST).
+ * \brief Base node of the abstract syntax tree (AST).
  *
  * The AST is implemented as a left-child, right-sibling tree, thus it
  * contains a pointer to a child node and a sibling node.
  */
-struct ast_node {
+struct ast_node_base {
 	/**
 	 * Type of the AST node
 	 */
@@ -404,33 +420,39 @@ struct ast_node {
 	 * Same level.
 	 */
 	struct ast_node *sibling;
-
-	/**
-	 * Pointer to value struct of the node.
-	 * value != NULL if type is ANT_INT, ANT_FLOAT,
-	 * ANT_STR, otherwise value == NULL.
-	 */
-	void *value;
 };
 
 /**
- * \brief Special value node of the AST carrying an integer value.
+ * \brief AST node without values.
+ */
+struct ast_node {
+	struct ast_node_base base;
+};
+
+/**
+ * \brief Value node of the AST carrying an integer value.
  */
 struct ast_node_int {
+	struct ast_node_base base;
+
 	int value;
 };
 
 /**
- * \brief Special value node of the AST carrying a float value.
+ * \brief Value node of the AST carrying a float value.
  */
 struct ast_node_float {
+	struct ast_node_base base;
+
 	float value;
 };
 
 /**
- * \brief Special value node of the AST carrying a string.
+ * \brief Value node of the AST carrying a string.
  */
 struct ast_node_str {
+	struct ast_node_base base;
+
 	char *value;
 };
 

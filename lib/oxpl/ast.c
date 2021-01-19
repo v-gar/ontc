@@ -21,14 +21,12 @@
 #include "ast.h"
 
 static struct ast_node *init_node(enum ast_node_type const type);
-static struct ast_node_int *init_node_int(void);
-static struct ast_node_float *init_node_float(void);
-static struct ast_node_str *init_node_str(void);
 
 /**
  * Set the type for a binary operation node in the switch-statement.
  */
-#define SET_BINOP_TYPE(ch, ant_type) case ch: node->type = ant_type; break;
+#define SET_BINOP_TYPE(ch, ant_type) \
+	case ch: AST_NODE_TYPE(node) = ant_type; break;
 
 /**
  * Multi-character operators used in ast_new_binop_s.
@@ -55,114 +53,72 @@ enum multicharacter_operator {
 
 static struct ast_node *init_node(enum ast_node_type const type)
 {
-	struct ast_node *node = malloc(sizeof(struct ast_node));
-
-	if (!node) {
-		perror("Can't create node struct: out of memory");
-		return NULL;
-	}
-
-	node->child = NULL;
-	node->sibling = NULL;
-	node->type = type;
+	size_t size;
 
 	switch (type) {
 		case ANT_INT:
-			node->value = init_node_int();
+			size = sizeof(struct ast_node_int);
 			break;
 
 		case ANT_FLOAT:
-			node->value = init_node_float();
+			size = sizeof(struct ast_node_float);
 			break;
 
 		case ANT_STR:
-			node->value = init_node_str();
+			size = sizeof(struct ast_node_str);
 			break;
 
 		default:
-			node->value = NULL;
+			size = sizeof(struct ast_node);
 	}
 
-	return node;
-}
-
-static struct ast_node_int *init_node_int(void)
-{
-	struct ast_node_int *node = malloc(sizeof(struct ast_node_int));
+	struct ast_node *node = malloc(size);
 
 	if (!node) {
 		perror("Can't create node struct: out of memory");
 		return NULL;
 	}
 
-	node->value = 0;
-
-	return node;
-}
-
-static struct ast_node_float *init_node_float(void)
-{
-	struct ast_node_float *node = malloc(sizeof(struct ast_node_float));
-
-	if (!node) {
-		perror("Can't create node struct: out of memory");
-		return NULL;
-	}
-
-	node->value = 0.f;
-
-	return node;
-}
-
-static struct ast_node_str *init_node_str(void)
-{
-	struct ast_node_str *node = malloc(sizeof(struct ast_node_str));
-
-	if (!node) {
-		perror("Can't create node struct: out of memory");
-		return NULL;
-	}
-
-	node->value = NULL;
+	node->base.child = NULL;
+	node->base.sibling = NULL;
+	node->base.type = type;
 
 	return node;
 }
 
 struct ast_node *ast_new_int(int value)
 {
-	struct ast_node *node = init_node(ANT_INT);
-	struct ast_node_int *node_val = node->value;
+	struct ast_node_int *node = (struct ast_node_int *)init_node(ANT_INT);
 
 	if (node == NULL)
 		return NULL;
 
-	node_val->value = value;
+	node->value = value;
 
-	return node;
+	return (struct ast_node *)node;
 }
 
 struct ast_node *ast_new_float(float value)
 {
-	struct ast_node *node = init_node(ANT_FLOAT);
-	struct ast_node_float *node_val = node->value;
+	struct ast_node_float *node =
+		(struct ast_node_float *)init_node(ANT_FLOAT);
 
 	if (node == NULL)
 		return NULL;
 
-	node_val->value = value;
+	node->value = value;
 
-	return node;
+	return (struct ast_node *)node;
 }
 
 struct ast_node *ast_new_str(char *value)
 {
-	struct ast_node *node = init_node(ANT_STR);
-	struct ast_node_str *node_val = node->value;
+	struct ast_node_str *node = (struct ast_node_str *)init_node(ANT_STR);
 
 	if (node == NULL)
 		return NULL;
 
-	node_val->value = value;
+	node->value = value;
 
 	return (struct ast_node *)node;
 }
@@ -180,14 +136,14 @@ struct ast_node *ast_new_scope(struct ast_node *value)
 		return NULL;
 	}
 
-	if (value->type != ANT_STR) {
+	if (AST_NODE_TYPE(value) != ANT_STR) {
 		fprintf(stderr, "Error: scope identifier has to "
 				"be a string.\n");
 		free(node);
 		return NULL;
 	}
 
-	node->child = value;
+	AST_NODE_CHLD1(node) = value;
 
 	return node;
 }
@@ -205,7 +161,7 @@ struct ast_node *ast_new_cmpd(struct ast_node *head)
 		return NULL;
 	}
 
-	node->child = head;
+	AST_NODE_CHLD1(node) = head;
 
 	return node;
 }
@@ -220,9 +176,9 @@ struct ast_node *ast_convert_cmpd_seq(struct ast_node *const cmpd_node)
 		return NULL;
 	}
 
-	if (cmpd_node->type != ANT_CMPD) {
+	if (AST_NODE_TYPE(cmpd_node) != ANT_CMPD) {
 		fprintf(stderr, "Error: cmpd_node has not type ANT_CMPD,"
-				" it has %d\n", cmpd_node->type);
+				" it has %d\n", AST_NODE_TYPE(cmpd_node));
 		return NULL;
 		/*
 		 * returning cmpd_node would be another option but this
@@ -233,7 +189,7 @@ struct ast_node *ast_convert_cmpd_seq(struct ast_node *const cmpd_node)
 		 */
 	}
 
-	cmpd_node->type = ANT_SEQ;
+	AST_NODE_TYPE(cmpd_node) = ANT_SEQ;
 
 	/**
 	 * In order to improve performance, children of nodes are not
@@ -251,10 +207,10 @@ struct ast_node *ast_new_call(struct ast_node *callee,
 	if (node == NULL)
 		return NULL;
 
-	node->child = callee;
+	AST_NODE_CHLD1(node) = callee;
 
 	if (arglist != NULL)
-		node->child->sibling = arglist;
+		AST_NODE_CHLD2(node) = arglist;
 
 	return node;
 }
@@ -302,8 +258,8 @@ struct ast_node *ast_new_binop(char oper, struct ast_node *operand1,
 			  return NULL;
 	}
 
-	node->child = operand1;
-	node->child->sibling = operand2;
+	AST_NODE_CHLD1(node) = operand1;
+	AST_NODE_CHLD2(node) = operand2;
 
 	return node;
 }
@@ -377,18 +333,18 @@ struct ast_node *ast_new_unop(char affix, char *oper,
 		return NULL;
 
 	if (!(strcmp(oper, "++"))) {
-		node->type = affix == 0 ? ANT_PREINC : ANT_POSTINC;
+		AST_NODE_TYPE(node) = affix == 0 ? ANT_PREINC : ANT_POSTINC;
 	} else if (!(strcmp(oper, "--"))) {
-		node->type = affix == 0 ? ANT_PREDEC : ANT_POSTDEC;
+		AST_NODE_TYPE(node) = affix == 0 ? ANT_PREDEC : ANT_POSTDEC;
 	} else if (!(strcmp(oper, "-"))) {
-		node->type = ANT_NEGSIGN;
+		AST_NODE_TYPE(node) = ANT_NEGSIGN;
 	}
 
-	if (node->type == ANT_UNDEFINED) {
+	if (AST_NODE_TYPE(node) == ANT_UNDEFINED) {
 		fprintf(stderr, "[A] Warning: UNDEF UNOP '%s'\n", oper);
 	}
 
-	node->child = operand;
+	AST_NODE_CHLD1(node) = operand;
 
 	return node;
 }
@@ -400,7 +356,7 @@ struct ast_node *ast_new_sig(struct ast_node *name)
 	if (node == NULL)
 		return NULL;
 
-	node->child = name;
+	AST_NODE_CHLD1(node) = name;
 
 	return node;
 }
@@ -413,10 +369,10 @@ struct ast_node *ast_new_sigvar(struct ast_node *identifier,
 	if (node == NULL)
 		return NULL;
 
-	node->child = identifier;
+	AST_NODE_CHLD1(node) = identifier;
 
 	if (type != NULL)
-		node->child->sibling = type;
+		AST_NODE_CHLD2(node) = type;
 
 	return node;
 }
@@ -429,10 +385,10 @@ struct ast_node *ast_new_func(struct ast_node *sig,
 	if (node == NULL)
 		return NULL;
 
-	node->child = sig;
+	AST_NODE_CHLD1(node) = sig;
 
 	/* block is NULL if node is declaration only */
-	node->child->sibling = block;
+	AST_NODE_CHLD2(node) = block;
 
 	return node;
 }
@@ -445,10 +401,10 @@ struct ast_node *ast_new_address(struct ast_node *scope,
 	if (node == NULL)
 		return NULL;
 
-	node->child = scope;
+	AST_NODE_CHLD1(node) = scope;
 
 	if (param != NULL)
-		node->child->sibling = param;
+		AST_NODE_CHLD2(node) = param;
 
 	return node;
 }
@@ -461,8 +417,8 @@ struct ast_node *ast_new_fact(struct ast_node *rel,
 	if (node == NULL)
 		return NULL;
 
-	node->child = rel;
-	node->child->sibling = args;
+	AST_NODE_CHLD1(node) = rel;
+	AST_NODE_CHLD2(node) = args;
 
 	return node;
 }
@@ -480,9 +436,9 @@ struct ast_node *ast_new_tfact(struct ast_node *subj,
 		return NULL;
 	}
 
-	node->child = rel;
-	node->child->sibling = subj;
-	node->child->sibling->sibling = obj;
+	AST_NODE_CHLD1(node) = rel;
+	AST_NODE_CHLD2(node) = subj;
+	AST_NODE_CHLD3(node) = obj;
 
 	return node;
 }
@@ -495,10 +451,10 @@ struct ast_node *ast_new_vardecl(struct ast_node *sigvar,
 	if (node == NULL)
 		return NULL;
 
-	node->child = sigvar;
+	AST_NODE_CHLD1(node) = sigvar;
 
 	if (val != NULL)
-		node->child->sibling = val;
+		AST_NODE_CHLD2(node) = val;
 
 	return node;
 }
@@ -511,11 +467,11 @@ struct ast_node *ast_new_class(struct ast_node *identifier,
 	if (node == NULL)
 		return NULL;
 
-	assert(identifier->type == ANT_STR);
-	assert(spec == NULL || spec->type == ANT_CSPEC);
+	assert(AST_NODE_TYPE(identifier) == ANT_STR);
+	assert(spec == NULL || AST_NODE_TYPE(spec) == ANT_CSPEC);
 
-	node->child = identifier;
-	node->child->sibling = spec; /* NULL if no body */
+	AST_NODE_CHLD1(node) = identifier;
+	AST_NODE_CHLD2(node) = spec; /* NULL if no body */
 
 	/* TODO: implement instance class type */
 
@@ -529,7 +485,7 @@ struct ast_node *ast_new_cspec(struct ast_node *head)
 	if (node == NULL)
 		return NULL;
 
-	node->child = head;
+	AST_NODE_CHLD1(node) = head;
 
 	return node;
 }
@@ -541,7 +497,7 @@ struct ast_node *ast_new_transunit(struct ast_node *first)
 	if (node == NULL)
 		return NULL;
 
-	node->child = first;
+	AST_NODE_CHLD1(node) = first;
 
 	return node;
 }
@@ -554,9 +510,9 @@ struct ast_node *ast_new_cond(struct ast_node *cond,
 	if (node == NULL)
 		return NULL;
 
-	node->child = cond;
-	node->child->sibling = then; /* TODO: introduce ANT_SEQ */
-	node->child->sibling->sibling = else_;
+	AST_NODE_CHLD1(node) = cond;
+	AST_NODE_CHLD2(node) = then; /* TODO: introduce ANT_SEQ */
+	AST_NODE_CHLD3(node) = else_;
 
 	return node;
 }
@@ -576,9 +532,9 @@ struct ast_node *ast_new_ctern(struct ast_node *cond,
 	if (node == NULL)
 		return NULL;
 
-	node->child = cond;
-	node->child->sibling = then;
-	node->child->sibling->sibling = else_;
+	AST_NODE_CHLD1(node) = cond;
+	AST_NODE_CHLD2(node) = then;
+	AST_NODE_CHLD3(node) = else_;
 
 	return node;
 }
@@ -591,7 +547,7 @@ struct ast_node *ast_new_ret(struct ast_node *expr)
 		return NULL;
 
 	if (expr != NULL)
-		node->child = expr;
+		AST_NODE_CHLD1(node) = expr;
 
 	return node;
 }
@@ -617,8 +573,8 @@ struct ast_node *ast_new_while(struct ast_node *condition,
 	if (node == NULL)
 		return NULL;
 
-	node->child = condition;
-	node->child->sibling = block;
+	AST_NODE_CHLD1(node) = condition;
+	AST_NODE_CHLD2(node) = block;
 
 	return node;
 }
@@ -632,9 +588,9 @@ struct ast_node *ast_new_for(struct ast_node *identifier,
 	if (node == NULL)
 		return NULL;
 
-	node->child = identifier;
-	node->child->sibling = iterable;
-	node->child->sibling->sibling = block;
+	AST_NODE_CHLD1(node) = identifier;
+	AST_NODE_CHLD2(node) = iterable;
+	AST_NODE_CHLD3(node) = block;
 
 	return node;
 }
@@ -647,10 +603,10 @@ struct ast_node *ast_add_seq(struct ast_node *node,
 		return node;
 	}
 
-	struct ast_node **cursor = &node->sibling;
+	struct ast_node **cursor = &node->base.sibling;
 
 	while (*cursor != NULL)
-		cursor = &(*cursor)->sibling;
+		cursor = &(*cursor)->base.sibling;
 
 	*cursor = successor;
 	return node;
@@ -664,10 +620,10 @@ struct ast_node *ast_scope_add(struct ast_node *node,
 		return node;
 	}
 
-	struct ast_node **cur = &node->child;
+	struct ast_node **cur = &node->base.child;
 
 	while (*cur != NULL) {
-		cur = &(*cur)->sibling;
+		cur = &(*cur)->base.sibling;
 	}
 
 	*cur = successor;
@@ -682,22 +638,22 @@ void ast_print(struct ast_node *root)
 		return;
 	}
 
-	printf("Node type: %d\n", root->type);
+	printf("Node type: %d\n", AST_NODE_TYPE(root));
 
-	if (root->type == ANT_STR) {
-		struct ast_node_str *node_val = root->value;
+	if (AST_NODE_TYPE(root) == ANT_STR) {
+		struct ast_node_str *node_val = (struct ast_node_str *)root;
 		printf("String: %s\n", node_val->value);
 	}
 
-	if (root->type == ANT_INT) {
-		struct ast_node_int *node_val = root->value;
+	if (AST_NODE_TYPE(root) == ANT_INT) {
+		struct ast_node_int *node_val = (struct ast_node_int *)root;
 		printf("Int: %d\n", node_val->value);
 	}
 
 	printf("Child:\n");
-	ast_print(root->child);
+	ast_print(AST_NODE_CHLD(root));
 	printf("Sibling:\n");
-	ast_print(root->sibling);
+	ast_print(AST_NODE_SIBL(root));
 }
 
 void ast_print_dot(struct ast_node *root)
@@ -705,22 +661,22 @@ void ast_print_dot(struct ast_node *root)
 	if (root == NULL)
 		return;
 
-	if (root->type == ANT_TRANSUNIT)
+	if (AST_NODE_TYPE(root) == ANT_TRANSUNIT)
 		printf("digraph ast\n{\n");
 
-	struct ast_node *cur = root->child;
+	struct ast_node *cur = AST_NODE_CHLD(root);
 
 	while (cur != NULL) {
 		printf("\tP%ld_T%d -> P%ld_T%d;\n",
-				(long) root, root->type,
-				(long) cur, cur->type);
-		cur = cur->sibling;
+				(long) root, AST_NODE_TYPE(root),
+				(long) cur, AST_NODE_TYPE(cur));
+		AST_NODE_NEXT_SIBL(cur);
 	}
 
-	ast_print_dot(root->sibling);
-	ast_print_dot(root->child);
+	ast_print_dot(AST_NODE_SIBL(root));
+	ast_print_dot(AST_NODE_CHLD(root));
 
-	if (root->type == ANT_TRANSUNIT)
+	if (AST_NODE_TYPE(root) == ANT_TRANSUNIT)
 		printf("}\n");
 }
 
@@ -731,17 +687,19 @@ int ast_validate(struct ast_node *root)
 		return 1;
 	}
 
-	struct ast_node *cur = root->child;
+	struct ast_node *cur = AST_NODE_CHLD(root);
 
 	int main_found = 0;
 
 	while (cur != NULL) {
-		if (cur->type == ANT_FUNC) {
+		if (AST_NODE_TYPE(cur) == ANT_FUNC) {
 			/* if this is a function ... */
-			struct ast_node *ident = cur->child->child;
-			if (ident->type == ANT_STR) {
+			struct ast_node *sig = AST_NODE_CHLD1(cur);
+			struct ast_node *ident = AST_NODE_CHLD1(sig);
+			if (AST_NODE_TYPE(ident) == ANT_STR) {
 				/* ... and the identifier is a string ... */
-				struct ast_node_str *node_val = ident->value;
+				struct ast_node_str *node_val =
+					(struct ast_node_str *)ident;
 				if (strcmp(node_val->value, "main") == 0)
 					main_found = 1;
 			} else {
@@ -750,7 +708,7 @@ int ast_validate(struct ast_node *root)
 			}
 		}
 
-		cur = cur->sibling;
+		AST_NODE_NEXT_SIBL(cur);
 	}
 
 	if (main_found != 1) {
@@ -766,20 +724,16 @@ void ast_free(struct ast_node *root)
 	if (root == NULL)
 		return;
 
-	ast_free(root->child);
-	ast_free(root->sibling);
+	ast_free(AST_NODE_CHLD(root));
+	ast_free(AST_NODE_SIBL(root));
 
-	switch (root->type) {
+	switch (AST_NODE_TYPE(root)) {
 		case ANT_STR: {
-			struct ast_node_str *valnode = root->value;
-			free(valnode->value);
-			free(valnode);
+			struct ast_node_str *node_val =
+				(struct ast_node_str *)root;
+			free(node_val->value);
 			break;
 			      }
-		case ANT_INT:
-		case ANT_FLOAT:
-			      free(root->value);
-			      break;
 
 		default:
 			      break;

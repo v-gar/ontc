@@ -100,16 +100,16 @@ static int execute_function(struct ast_node *fn_node,
 		struct ast_node *root)
 {
 	/* check whether node is function node */
-	if (fn_node == NULL || fn_node->type != ANT_FUNC)
+	if (fn_node == NULL || AST_NODE_TYPE(fn_node) != ANT_FUNC)
 		return 1;
 
 	/* walk through function child nodes */
 	struct ast_node *cur;
 
-	cur = fn_node->child; /* signature (no handler implemented yet) */
+	cur = AST_NODE_CHLD1(fn_node); /* signature (not implemented yet) */
 
 	/* ontology proof of concept */
-	struct ast_node_str *name_str_node_val = cur->child->value;
+	AST_NODE_CAST(name_str_node_val, AST_NODE_CHLD1(cur), str);
 	char *name = name_str_node_val->value;
 
 	struct ontology_resource *rel = ontology_find_resource(kb,
@@ -139,16 +139,16 @@ static int execute_function(struct ast_node *fn_node,
 	}
 	/* end of ontology proof of concept */
 
-	cur = cur->sibling; /* body */
+	AST_NODE_NEXT_SIBL(cur); /* body */
 
 	/* execute function body */
 	while (cur != NULL) {
-		if (ANT_CALL == cur->type) {
+		if (ANT_CALL == AST_NODE_TYPE(cur)) {
 			execute_call(cur);
 		}
 
 		/* next child of function */
-		cur = cur->sibling;
+		AST_NODE_NEXT_SIBL(cur);
 	}
 
 	return 0;
@@ -157,19 +157,19 @@ static int execute_function(struct ast_node *fn_node,
 static int execute_call(struct ast_node *call_node)
 {
 	/* check whether node is call node */
-	if (call_node == NULL || call_node->type != ANT_CALL)
+	if (call_node == NULL || AST_NODE_TYPE(call_node) != ANT_CALL)
 		return 1;
 
-	struct ast_node *call_expr = call_node->child;
-	struct ast_node *args = call_expr->sibling;
+	struct ast_node *call_expr = AST_NODE_CHLD1(call_node);
+	struct ast_node *args = AST_NODE_CHLD2(call_node);
 
 	/* test for simple built-in function */
-	if (call_expr->type == ANT_SCOPE
-			&& call_expr->child != NULL
-			&& call_expr->child->type == ANT_STR
-			&& call_expr->child->sibling == NULL) /* one level */
+	if (AST_NODE_TYPE(call_expr) == ANT_SCOPE
+			&& AST_NODE_CHLD1(call_expr) != NULL
+			&& AST_NODE_TYPE(AST_NODE_CHLD1(call_expr)) == ANT_STR
+			&& AST_NODE_CHLD2(call_expr) == NULL) /* one level */
 	{
-		struct ast_node_str *node_val = call_expr->child->value;
+		AST_NODE_CAST(node_val, AST_NODE_CHLD1(call_expr), str);
 		char *name = node_val->value;
 
 		if (strcmp("print", name) == 0) {
@@ -190,24 +190,25 @@ static struct ast_node *get_fn(struct ast_node *ast, char *name)
 	if (ast == NULL)
 		return NULL;
 
-	struct ast_node *cur = ast->child;
+	struct ast_node *cur = AST_NODE_CHLD1(ast);
 
 	/* find main function */
 	do {
-		if (cur->type != ANT_FUNC)
+		if (AST_NODE_TYPE(cur) != ANT_FUNC)
 			continue;
 
 		/* if this is a function ... */
-		struct ast_node *ident = cur->child->child;
+		struct ast_node *sig = AST_NODE_CHLD1(cur);
+		struct ast_node *ident = AST_NODE_CHLD1(sig);
 
-		if (ident->type != ANT_STR)
+		if (AST_NODE_TYPE(ident) != ANT_STR)
 			continue;
 
 		/* ... and the identifier is a string ... */
-		struct ast_node_str *ident_str_node_val = ident->value;
+		AST_NODE_CAST(ident_str_node_val, ident, str);
 		if (strcmp(ident_str_node_val->value, name) == 0)
 			return cur;
-	} while (NULL != (cur = cur->sibling));
+	} while (NULL != AST_NODE_NEXT_SIBL(cur));
 
 	return NULL;
 }
@@ -217,14 +218,15 @@ static void collect_facts(struct ast_node *root, struct ontology_database *kb)
 	if (root == NULL)
 		return;
 
-	struct ast_node *cur = root->child;
+	struct ast_node *cur = AST_NODE_CHLD1(root);
 
 	do {
-		if (cur->type != ANT_FUNC)
+		if (AST_NODE_TYPE(cur) != ANT_FUNC)
 			continue;
 
-		struct ast_node *str_node = cur->child->child;
-		struct ast_node_str *str_node_val = str_node->value;
+		struct ast_node *sig = AST_NODE_CHLD1(cur);
+		struct ast_node *str_node = AST_NODE_CHLD1(sig);
+		AST_NODE_CAST(str_node_val, str_node, str);
 		char *name = str_node_val->value;
 
 		char *resname = malloc(strlen(name) + 1);
@@ -233,30 +235,32 @@ static void collect_facts(struct ast_node *root, struct ontology_database *kb)
 		struct ontology_resource *res = ontology_create_resource(
 				resname);
 		ontology_add_resource(kb, res);
-	} while (NULL != (cur = cur->sibling));
+	} while (NULL != AST_NODE_NEXT_SIBL(cur));
 
-	cur = root->child;
+	cur = AST_NODE_CHLD1(root); /* reset */
 
 	do {
-		if (cur->type != ANT_TFACT)
+		if (AST_NODE_TYPE(cur) != ANT_TFACT)
 			continue;
 
-		struct ast_node *rel = cur->child; /* ANT_SCOPE */
-		struct ast_node *sbj = rel->sibling; /* ANT_ADDR */
-		struct ast_node *obj = sbj->sibling; /* ANT_SCOPE */
+		struct ast_node *rel = AST_NODE_CHLD1(cur); /* ANT_ADDR */
+		struct ast_node *sbj = AST_NODE_CHLD2(cur); /* ANT_SCOPE */
+		struct ast_node *obj = AST_NODE_CHLD3(cur); /* ANT_ADDR */
 
 		char *relname, *sbjname, *objname = NULL;
 
-		struct ast_node_str *rel_str_node_val = rel->child->value;
-		struct ast_node_str *sbj_str_node_val = sbj->child->child
-			->value;
+		struct ast_node *sbj_scope = AST_NODE_CHLD1(sbj);
+		AST_NODE_CAST(rel_str_node_val, AST_NODE_CHLD1(rel), str);
+		AST_NODE_CAST(sbj_str_node_val, AST_NODE_CHLD1(sbj_scope),
+				str);
 
 		relname = rel_str_node_val->value;
 		sbjname = sbj_str_node_val->value;
 
 		if (obj != NULL) {
-			struct ast_node_str *obj_str_node_val = obj->child
-				->child->value;
+			struct ast_node *obj_scope = AST_NODE_CHLD1(obj);
+			AST_NODE_CAST(obj_str_node_val,
+					AST_NODE_CHLD1(obj_scope), str);
 			objname = obj_str_node_val->value;
 		}
 
@@ -279,7 +283,7 @@ static void collect_facts(struct ast_node *root, struct ontology_database *kb)
 			ontology_add_argument_to_fact(kb, fact, objres);
 
 		ontology_add_fact(kb, fact);
-	} while (NULL != (cur = cur->sibling));
+	} while (NULL != AST_NODE_NEXT_SIBL(cur));
 }
 
 static void populate_kb(struct ontology_database *kb)

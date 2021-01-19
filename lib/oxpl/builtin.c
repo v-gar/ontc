@@ -23,18 +23,18 @@ void lang_builtin_fn_print(struct ast_node *args)
 		return;
 	}
 
-	if (args->type != ANT_STR) {
+	if (AST_NODE_TYPE(args) != ANT_STR) {
 		fprintf(stderr, "Error: print: wrong type of argument\n");
 		return;
 	}
 
-	if (args->sibling != NULL) {
+	if (AST_NODE_SIBL(args) != NULL) {
 		fprintf(stderr, "Error: print: too many arguments\n");
 		return;
 	}
 
-	struct ast_node_str *str_node_val = args->value;
-	char *print_str = str_node_val->value;
+	AST_NODE_CAST(node_val, args, str);
+	char *print_str = node_val->value;
 
 	printf("%s", print_str);
 }
@@ -46,18 +46,18 @@ void lang_builtin_fn_println(struct ast_node *args)
 		return;
 	}
 
-	if (args->type != ANT_STR) {
+	if (AST_NODE_TYPE(args) != ANT_STR) {
 		fprintf(stderr, "Error: print: wrong type of argument\n");
 		return;
 	}
 
-	if (args->sibling != NULL) {
+	if (AST_NODE_SIBL(args) != NULL) {
 		fprintf(stderr, "Error: print: too many arguments\n");
 		return;
 	}
 
-	struct ast_node_str *str_node_val = args->value;
-	char *print_str = str_node_val->value;
+	AST_NODE_CAST(node_val, args, str);
+	char *print_str = node_val->value;
 
 	printf("%s\n", print_str);
 }
